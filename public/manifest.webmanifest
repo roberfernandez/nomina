@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Nòmina",
+  "short_name": "Nòmina",
+  "lang": "ca",
+  "description": "Entén els conceptes de la teva nòmina",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#080f1c",
+  "background_color": "#080f1c",
+  "icons": [
+    {"src":"./assets/nomina-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"./assets/nomina-512.png","sizes":"512x512","type":"image/png","purpose":"any"}
+  ]
+}
