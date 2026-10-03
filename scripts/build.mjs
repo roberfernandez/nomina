@@ -1,9 +1,12 @@
-import {mkdir,copyFile,cp,readFile,writeFile,readdir} from 'node:fs/promises';
+import {mkdir,copyFile,cp,readFile,writeFile,readdir,rm} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 await mkdir('dist',{recursive:true});
 await copyFile('index.html','dist/index.html');
-await cp('src','dist/src',{recursive:true});
+const runtime=['app-v2.js','concept-model-v2.js','dictionary-v2.js','economics-v2.js','computo-cloud-v2.js','style.css'];
+await mkdir('dist/src',{recursive:true});
+for(const name of await readdir('dist/src'))if(!runtime.includes(name))await rm(`dist/src/${name}`,{force:true});
+for(const name of runtime)await copyFile(`src/${name}`,`dist/src/${name}`);
 await cp('public','dist',{recursive:true});
 const hash=createHash('sha256');
 for(const dir of ['src','public/assets'])for(const name of (await readdir(dir)).sort())hash.update(await readFile(`${dir}/${name}`));
