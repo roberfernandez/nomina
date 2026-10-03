@@ -8,6 +8,7 @@ await mkdir('dist/src',{recursive:true});
 for(const name of await readdir('dist/src'))if(!runtime.includes(name))await rm(`dist/src/${name}`,{force:true});
 for(const name of runtime)await copyFile(`src/${name}`,`dist/src/${name}`);
 await cp('public','dist',{recursive:true});
+await copyFile('assets/tmb-agent-192.png','dist/assets/tmb-agent-192.png');
 const hash=createHash('sha256');
 for(const dir of ['src','public/assets'])for(const name of (await readdir(dir)).sort())hash.update(await readFile(`${dir}/${name}`));
 hash.update(await readFile('index.html'));
