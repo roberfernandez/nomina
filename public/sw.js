@@ -1,5 +1,5 @@
 const CACHE='nomina-__VERSION__';
-const FILES=['./','index.html','src/app-v3.js','src/month-model-v3.js','src/dictionary-v2.js','src/economics-v2.js','src/computo-cloud-v2.js','src/style.css','manifest.webmanifest','assets/nomina-192.png','assets/nomina-512.png','assets/nomina-180.png','assets/tmb-agent-192.png?v=3'];
+const FILES=['./','index.html','src/app-v3.js','src/month-model-v3.js','src/resolved-rules-v3.js','src/personal-profile.js','src/dictionary-v2.js','src/economics-v2.js','src/computo-cloud-v2.js','src/style.css','manifest.webmanifest','assets/nomina-192.png','assets/nomina-512.png','assets/nomina-180.png','assets/tmb-agent-192.png?v=3'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES.map(p=>new URL(p,self.registration.scope).href)))));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('nomina-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 // Cache only this app's static allowlist. Never cache other miniapps, APIs or
