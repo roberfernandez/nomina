@@ -1,3 +1,4 @@
+import {createProfileSync,markProfileDirty} from './profile-sync.js';
 import {profileOwner,readPersonal,savePersonal} from './personal-profile.js';
 import {loadPayrollFacts} from './computo-cloud-v2.js';
 import {euros,percentage} from './economics-v2.js';
@@ -8,7 +9,9 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const number=n=>n===null||n===undefined?'Pendent':new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(n);
 const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Madrid'}).format(new Date());
 const dictionary=normalizedDictionary();
-let year=2026,query='',generation=0,cache=new Map();
+let year=2026,query='',generation=0,cache=new Map(),profileEditing=false,profileSyncState={message:'Comprovant sincronització del perfil…'};
+const syncProfile=createProfileSync(localStorage,fetch,today);
+async function syncPersonal(choice){profileSyncState=await syncProfile(choice);if(route()==='profile'&&profileEditing){const el=root.querySelector('#profile-message');if(el)el.textContent=profileSyncState.message;return;}render();}
 const href=route=>`#${route}`;
 function route(){return decodeURIComponent(location.hash.slice(1));}
 function ensure(period){
@@ -37,7 +40,7 @@ function card(c,data,facts,period){
 }
 function personalPage(){
  const p=personal()||{joined:'',children:[]};
- return `<h1>Perfil</h1><p>Només les dades que Nòmina necessita. El percentatge i les unitats laborals continuen arribant de Cómputo.</p><form id="personal-form"><label>Data d’incorporació a l’empresa<input type="date" name="joined" value="${esc(p.joined||'')}" max="${today()}"></label><h2>Fills</h2><p>Només data de naixement, sense noms. Desa sense files si no tens fills.</p><div id="children">${p.children.map(c=>childInput(c.birth)).join('')}</div><button type="button" id="add-child" class="secondary">+ Afegir fill</button><div class="actions"><button type="submit">Desar perfil</button></div><p id="profile-message" role="status"></p></form><p class="meta">Desat només en aquest dispositiu, separat per compte de TMB Agent. Encara no se sincronitza entre dispositius. Eliminar una fila i desar elimina aquella data del perfil.</p>`;
+ return `<h1>Perfil</h1><p>Només les dades que Nòmina necessita. El percentatge i les unitats laborals continuen arribant de Cómputo.</p><form id="personal-form"><label>Data d’incorporació a l’empresa<input type="date" name="joined" value="${esc(p.joined||'')}" max="${today()}"></label><h2>Fills</h2><p>Només data de naixement, sense noms. Desa sense files si no tens fills.</p><div id="children">${p.children.map(c=>childInput(c.birth)).join('')}</div><button type="button" id="add-child" class="secondary">+ Afegir fill</button><div class="actions"><button type="submit">Desar perfil</button></div><p id="profile-message" role="status">${esc(profileSyncState.message)}</p>${profileSyncState.state==='conflict'?'<div class="actions"><button type="button" id="cloud-profile">Utilitzar perfil del compte</button><button type="button" id="local-profile" class="secondary">Conservar aquest perfil</button></div>':''}</form><p class="meta">Sincronitzat amb el teu compte de TMB Agent. Les dades locals anteriors es pugen en obrir aquesta versió; sense connexió es conserven i es tornen a intentar sincronitzar. Eliminar una fila i desar elimina aquella data del perfil.</p>`;
 }
 function childInput(birth=''){return `<div class="fields"><label>Data de naixement<input type="date" name="birth" required max="${today()}" value="${esc(birth)}"></label><button type="button" class="secondary remove-child">Eliminar fill</button></div>`;}
 function variables(period,previous=false){return variableConcepts.filter(c=>!c.historical&&(!c.annual||period.endsWith('-01'))&&(!previous||c.timing!=='same'));}
@@ -64,17 +67,21 @@ function render(){
  else if(r.startsWith('extra/')&&isPeriod(r.slice(6))){year=+r.slice(6,10);body=extra(r.slice(6));}
  else body=r==='profile'?personalPage():r==='extras'?extras():r==='dictionary'?dict():r.startsWith('concept/')?concept(r.slice(8)):home();
  root.innerHTML=nav()+body;
- root.querySelector('#add-child')?.addEventListener('click',()=>root.querySelector('#children').insertAdjacentHTML('beforeend',childInput()));
- root.querySelector('#children')?.addEventListener('click',e=>{if(e.target.matches('.remove-child'))e.target.closest('.fields').remove();});
+ root.querySelector('#personal-form')?.addEventListener('input',()=>{profileEditing=true;});
+ root.querySelector('#cloud-profile')?.addEventListener('click',()=>{profileEditing=false;syncPersonal('remote');});
+ root.querySelector('#local-profile')?.addEventListener('click',()=>{profileEditing=false;syncPersonal('local');});
+ root.querySelector('#add-child')?.addEventListener('click',()=>{profileEditing=true;root.querySelector('#children').insertAdjacentHTML('beforeend',childInput());});
+ root.querySelector('#children')?.addEventListener('click',e=>{if(e.target.matches('.remove-child')){profileEditing=true;e.target.closest('.fields').remove();}});
  const formOwner=profileOwner(localStorage);
- root.querySelector('#personal-form')?.addEventListener('submit',e=>{e.preventDefault();try{if(profileOwner(localStorage)!==formOwner)throw Error('El compte ha canviat; torna a obrir Perfil');savePersonal(localStorage,profileOwner(localStorage),{joined:e.target.elements.joined.value,children:[...e.target.querySelectorAll('[name=birth]')].map(i=>({birth:i.value}))},today());root.querySelector('#profile-message').textContent='Perfil desat en aquest dispositiu.';}catch(error){root.querySelector('#profile-message').textContent=error.message;}});
+ root.querySelector('#personal-form')?.addEventListener('submit',e=>{e.preventDefault();try{if(profileOwner(localStorage)!==formOwner)throw Error('El compte ha canviat; torna a obrir Perfil');markProfileDirty(localStorage,formOwner);savePersonal(localStorage,profileOwner(localStorage),{joined:e.target.elements.joined.value,children:[...e.target.querySelectorAll('[name=birth]')].map(i=>({birth:i.value}))},today());profileEditing=false;root.querySelector('#profile-message').textContent='Desat localment. Sincronitzant…';syncPersonal();}catch(error){root.querySelector('#profile-message').textContent=error.message;}});
  root.querySelector('#year')?.addEventListener('change',e=>{year=+e.target.value;render();});
  root.querySelector('#search')?.addEventListener('input',e=>{query=e.target.value;const pos=e.target.selectionStart;render();const el=root.querySelector('#search');el.focus();el.setSelectionRange(pos,pos);});
 }
-window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0);});
+window.addEventListener('hashchange',()=>{profileEditing=false;render();window.scrollTo(0,0);});
 function refresh(){generation++;cache=new Map();if(route()!=='profile')render();}
-window.addEventListener('focus',refresh);
-window.addEventListener('storage',()=>{generation++;cache=new Map();render();});
+window.addEventListener('focus',()=>{refresh();if(!profileEditing)syncPersonal();});
+window.addEventListener('online',()=>{if(!profileEditing)syncPersonal();});
+window.addEventListener('storage',()=>{generation++;cache=new Map();profileEditing=false;render();syncPersonal();});
 document.querySelector('[data-section="home"]')?.addEventListener('click',()=>{location.hash='';render();});
-render();
+render();syncPersonal();
 if('serviceWorker' in navigator&&!['127.0.0.1','localhost'].includes(location.hostname))navigator.serviceWorker.register('./sw.js').catch(()=>{});

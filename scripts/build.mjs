@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 await mkdir('dist',{recursive:true});
 await copyFile('index.html','dist/index.html');
-const runtime=['app-v3.js','month-model-v3.js','resolved-rules-v3.js','personal-profile.js','dictionary-v2.js','economics-v2.js','computo-cloud-v2.js','style.css'];
+const runtime=['app-v3.js','month-model-v3.js','resolved-rules-v3.js','personal-profile.js','profile-sync.js','dictionary-v2.js','economics-v2.js','computo-cloud-v2.js','style.css'];
 await mkdir('dist/src',{recursive:true});
 for(const name of await readdir('dist/src'))if(!runtime.includes(name))await rm(`dist/src/${name}`,{force:true});
 for(const name of runtime)await copyFile(`src/${name}`,`dist/src/${name}`);
