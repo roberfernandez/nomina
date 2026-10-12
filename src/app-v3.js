@@ -62,14 +62,15 @@ const normalize=s=>s.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase(
 function economicConcept(c){
  return [...fixedConcepts,...variableConcepts,...extraConcepts].find(x=>x.id===c.id||x.name===c.name)||null;
 }
-function rulePrice(rule){
+function rulePrice(rule,concept){
+ if(rule?.formula==='family'&&typeof rule.rate==='number')return `${euros(rule.rate)}/fill/mes`;
  if(typeof rule?.rate==='number'){
   const unit=rule.unit==='h'?'h':rule.unit==='day'?'dia':'unitat';
   return `${euros(rule.rate)}/${unit}`;
  }
  if(typeof rule?.base==='number'){
   if(rule.formula==='proportional')return `Base ${euros(rule.base)} × % contractual`;
-  if(rule.formula==='seniority')return `Base de càlcul ${euros(rule.base)} · 5 % per quadrienni`;
+  if(rule.formula==='seniority')return `Base de càlcul ${euros(rule.base)} · 5 % per quadrienni · 2,5 % bienni inicial`;
   if(rule.formula==='annual')return `Base anual ${euros(rule.base)}`;
   return `Base ${euros(rule.base)}`;
  }
@@ -80,21 +81,25 @@ function dictionaryPricing(c){
  if(!concept)return '<h2>Tarifa / base documentada</h2><p class="meta">No hi ha una tarifa o base universal acreditada per a aquest concepte.</p>';
  const rows=[];
  for(let month=1;month<=12;month++){
-  const period=`2026-${String(month).padStart(2,'0')}`,rule=ruleFor(concept,period),price=rulePrice(rule);
+  const period=`2026-${String(month).padStart(2,'0')}`,rule=ruleFor(concept,period),price=rulePrice(rule,concept);
   if(!rule||!price)continue;
-  const key=JSON.stringify({price,source:rule.source,message:rule.message||''});
+  const key=JSON.stringify({price,source:rule.source,message:rule.message||'',estimated:!!rule.estimated,formula:rule.formula});
   let row=rows.find(x=>x.key===key);
-  if(!row){row={key,price,source:rule.source,message:rule.message||'',months:[]};rows.push(row);}
+  if(!row){row={key,price,source:rule.source,message:rule.message||'',estimated:!!rule.estimated,formula:rule.formula,months:[]};rows.push(row);}
   row.months.push(month);
  }
  if(!rows.length)return '<h2>Tarifa / base documentada</h2><p class="meta">No hi ha una tarifa o base universal acreditada per a aquest concepte.</p>';
- const monthsLabel=months=>{
+ const monthsLabel=(months,row)=>{
+  if(row.formula==='family')return '2026 · 10 mensualitats · setembre–juny';
   if(months.length===12)return '2026 · tot l’any';
   const consecutive=months.every((m,i)=>i===0||m===months[i-1]+1);
   if(consecutive&&months.length>1)return `2026 · ${monthNames[months[0]-1]}–${monthNames[months.at(-1)-1]}`;
   return `2026 · ${months.map(m=>monthNames[m-1]).join(', ')}`;
  };
- return `<h2>Tarifa / base documentada</h2>${rows.map(row=>`<div class="calculation"><strong>${esc(row.price)}</strong><br><small>${esc(monthsLabel(row.months))}</small>${row.source?`<p class="meta">${esc(row.source)}</p>`:''}${row.message?`<p class="meta">${esc(row.message)}</p>`:''}</div>`).join('')}<p class="meta">Són tarifes o bases documentades de 2026. No són l’import net personal: el càlcul final pot dependre d’unitats, percentatge contractual, meritació, absències o altres ajustos.</p>`;
+ const missingExtra=concept.kind==='extra'&&rows.reduce((s,r)=>s+r.months.length,0)<4
+   ? '<p class="meta">Les bases de paga extra que encara no estan acreditades per a 2026 es mantenen pendents; no s’extrapola cap import.</p>'
+   : '';
+ return `<h2>Tarifa / base documentada</h2>${rows.map(row=>`<div class="calculation"><strong>${esc(row.price)}</strong><br><small>${esc(monthsLabel(row.months,row))}</small>${row.estimated?'<p class="meta"><strong>Tarifa de referència:</strong> el càlcul econòmic continua sent una estimació.</p>':''}${row.source?`<p class="meta">${esc(row.source)}</p>`:''}${row.message?`<p class="meta">${esc(row.message)}</p>`:''}</div>`).join('')}${missingExtra}<p class="meta">Són tarifes o bases documentades de 2026. No són l’import net personal: el càlcul final pot dependre d’unitats, percentatge contractual, meritació, absències o altres ajustos.</p>`;
 }
 function dict(){return `<h1>Diccionari</h1><p>84 denominacions documentals agrupades. Les variants trimestrals de les pagues extra comparteixen concepte. Quan hi ha una tarifa o base documentada, es mostra dins de la fitxa del concepte.</p><label>Cerca un concepte<input id="search" type="search" value="${esc(query)}" placeholder="Salario Base, nocturnidad…"></label><div class="dictionary-list">${dictionary.filter(c=>normalize(c.name+' '+c.aliases.join(' ')).includes(normalize(query))).map(c=>`<a class="dictionary-link" href="#concept/${c.id}"><strong>${esc(c.name)}</strong><span>›</span></a>`).join('')||'<p>Cap coincidència.</p>'}</div>`;}
 function concept(id){const c=dictionary.find(c=>c.id===id);if(!c)return dict();return `<a class="link" href="#dictionary">← Diccionari</a><h1>${esc(c.name)}</h1><article class="pay-card"><p>${esc(c.description)}</p>${dictionaryPricing(c)}<h2>Fórmula / criteri</h2><p>${esc(c.formula)}</p><p>${esc(c.limits||c.note)}</p>${c.aliases.length>1?`<details><summary>Denominacions originals segons la paga</summary><ul>${c.aliases.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></details>`:''}<p class="meta">Fonts històriques de desenvolupament. Les tarifes/base mostrades són regles documentades de l’app; no s’utilitzen com a dada personal sense aplicar el criteri corresponent.</p></article>`;}
