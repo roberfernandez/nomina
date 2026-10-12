@@ -2,7 +2,7 @@ import {createProfileSync,markProfileDirty} from './profile-sync.js';
 import {profileOwner,readPersonal,savePersonal} from './personal-profile.js';
 import {loadPayrollFacts} from './computo-cloud-v2.js';
 import {euros,percentage} from './economics-v2.js';
-import {monthNames,periodLabel,shiftPeriod,periodContext,visibleFacts,metrics,unitsFor,fixedConcepts,variableConcepts,extraConcepts,normalizedDictionary,calculate,isPeriod} from './month-model-v3.js';
+import {monthNames,periodLabel,shiftPeriod,periodContext,visibleFacts,metrics,unitsFor,fixedConcepts,variableConcepts,extraConcepts,normalizedDictionary,calculate,isPeriod,ruleFor} from './month-model-v3.js';
 
 const root=document.querySelector('main');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -59,8 +59,45 @@ function month(period){
 function extras(){return `<h1>Pagues extra · ${year}</h1><p>El concepte és únic; el trimestre és el context de la paga. El mes imprès en alguns rebuts històrics no coincideix amb el nom de la paga.</p><div class="months-grid">${[3,6,9,12].map(m=>`<a class="month-card" href="#extra/${year}-${String(m).padStart(2,'0')}"><strong>${monthNames[m-1]}</strong><span>${year}</span></a>`).join('')}</div><a class="link" href="#">← Canviar any / Mesos</a>`;}
 function extra(period){ensure(period);const data=cache.get(period);return `<a class="link" href="#extras">← Pagues extra</a><h1>Paga extra · ${periodLabel(period)}</h1><p>${availability(data)}</p><p>Previsió del component íntegre amb el percentatge de Cómputo. Els ajustos de meritació no resolts continuen pendents; no s’importa cap rebut.</p><div class="pay-grid">${extraConcepts.map(c=>card(c,data,null,period)).join('')}</div>`;}
 const normalize=s=>s.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
-function dict(){return `<h1>Diccionari</h1><p>84 denominacions documentals agrupades. Les variants trimestrals de les pagues extra comparteixen concepte.</p><label>Cerca un concepte<input id="search" type="search" value="${esc(query)}" placeholder="Salario Base, nocturnidad…"></label><div class="dictionary-list">${dictionary.filter(c=>normalize(c.name+' '+c.aliases.join(' ')).includes(normalize(query))).map(c=>`<a class="dictionary-link" href="#concept/${c.id}"><strong>${esc(c.name)}</strong><span>›</span></a>`).join('')||'<p>Cap coincidència.</p>'}</div>`;}
-function concept(id){const c=dictionary.find(c=>c.id===id);if(!c)return dict();return `<a class="link" href="#dictionary">← Diccionari</a><h1>${esc(c.name)}</h1><article class="pay-card"><p>${esc(c.description)}</p><h2>Fórmula / criteri</h2><p>${esc(c.formula)}</p><p>${esc(c.limits||c.note)}</p>${c.aliases.length>1?`<details><summary>Denominacions originals segons la paga</summary><ul>${c.aliases.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></details>`:''}<p class="meta">Fonts històriques de desenvolupament. Cap import d’aquests documents s’utilitza com a dada personal actual.</p></article>`;}
+function economicConcept(c){
+ return [...fixedConcepts,...variableConcepts,...extraConcepts].find(x=>x.id===c.id||x.name===c.name)||null;
+}
+function rulePrice(rule){
+ if(typeof rule?.rate==='number'){
+  const unit=rule.unit==='h'?'h':rule.unit==='day'?'dia':'unitat';
+  return `${euros(rule.rate)}/${unit}`;
+ }
+ if(typeof rule?.base==='number'){
+  if(rule.formula==='proportional')return `Base ${euros(rule.base)} × % contractual`;
+  if(rule.formula==='seniority')return `Base de càlcul ${euros(rule.base)} · 5 % per quadrienni`;
+  if(rule.formula==='annual')return `Base anual ${euros(rule.base)}`;
+  return `Base ${euros(rule.base)}`;
+ }
+ return null;
+}
+function dictionaryPricing(c){
+ const concept=economicConcept(c);
+ if(!concept)return '<h2>Tarifa / base documentada</h2><p class="meta">No hi ha una tarifa o base universal acreditada per a aquest concepte.</p>';
+ const rows=[];
+ for(let month=1;month<=12;month++){
+  const period=`2026-${String(month).padStart(2,'0')}`,rule=ruleFor(concept,period),price=rulePrice(rule);
+  if(!rule||!price)continue;
+  const key=JSON.stringify({price,source:rule.source,message:rule.message||''});
+  let row=rows.find(x=>x.key===key);
+  if(!row){row={key,price,source:rule.source,message:rule.message||'',months:[]};rows.push(row);}
+  row.months.push(month);
+ }
+ if(!rows.length)return '<h2>Tarifa / base documentada</h2><p class="meta">No hi ha una tarifa o base universal acreditada per a aquest concepte.</p>';
+ const monthsLabel=months=>{
+  if(months.length===12)return '2026 · tot l’any';
+  const consecutive=months.every((m,i)=>i===0||m===months[i-1]+1);
+  if(consecutive&&months.length>1)return `2026 · ${monthNames[months[0]-1]}–${monthNames[months.at(-1)-1]}`;
+  return `2026 · ${months.map(m=>monthNames[m-1]).join(', ')}`;
+ };
+ return `<h2>Tarifa / base documentada</h2>${rows.map(row=>`<div class="calculation"><strong>${esc(row.price)}</strong><br><small>${esc(monthsLabel(row.months))}</small>${row.source?`<p class="meta">${esc(row.source)}</p>`:''}${row.message?`<p class="meta">${esc(row.message)}</p>`:''}</div>`).join('')}<p class="meta">Són tarifes o bases documentades de 2026. No són l’import net personal: el càlcul final pot dependre d’unitats, percentatge contractual, meritació, absències o altres ajustos.</p>`;
+}
+function dict(){return `<h1>Diccionari</h1><p>84 denominacions documentals agrupades. Les variants trimestrals de les pagues extra comparteixen concepte. Quan hi ha una tarifa o base documentada, es mostra dins de la fitxa del concepte.</p><label>Cerca un concepte<input id="search" type="search" value="${esc(query)}" placeholder="Salario Base, nocturnidad…"></label><div class="dictionary-list">${dictionary.filter(c=>normalize(c.name+' '+c.aliases.join(' ')).includes(normalize(query))).map(c=>`<a class="dictionary-link" href="#concept/${c.id}"><strong>${esc(c.name)}</strong><span>›</span></a>`).join('')||'<p>Cap coincidència.</p>'}</div>`;}
+function concept(id){const c=dictionary.find(c=>c.id===id);if(!c)return dict();return `<a class="link" href="#dictionary">← Diccionari</a><h1>${esc(c.name)}</h1><article class="pay-card"><p>${esc(c.description)}</p>${dictionaryPricing(c)}<h2>Fórmula / criteri</h2><p>${esc(c.formula)}</p><p>${esc(c.limits||c.note)}</p>${c.aliases.length>1?`<details><summary>Denominacions originals segons la paga</summary><ul>${c.aliases.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></details>`:''}<p class="meta">Fonts històriques de desenvolupament. Les tarifes/base mostrades són regles documentades de l’app; no s’utilitzen com a dada personal sense aplicar el criteri corresponent.</p></article>`;}
 function render(){
  const r=route();let body;
  if(isPeriod(r)){year=+r.slice(0,4);body=month(r);}
