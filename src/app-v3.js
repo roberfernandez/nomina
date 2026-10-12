@@ -93,7 +93,7 @@ function seniorityDictionaryPricing(){
      <p class="meta">El bienni inicial no se suma al primer quadrienni: en arribar als 4 anys és substituït pel primer quadrienni. Cada nou quadrienni afegeix un altre ${money(quad)}/mes al 100 %.</p>
      <p class="meta">Fórmula: bienni inicial = 2,5 % del salari base; cada quadrienni = 5 % del salari base.</p>
    </div>`;
- }).join('')}<p class="meta">L’efecte retributiu s’aplica segons la regla d’antiguitat documentada a l’app. L’import personal depèn del percentatge contractual vigent.</p>`;
+ }).join('')}<p class="meta">L’efecte retributiu s’aplica segons la regla d’antiguitat documentada a l’app. L’import personal depèn del percentatge contractual vigent.</p><p><strong>Exemple:</strong> amb 4 quadriennis, a raó d’un 5 % per quadrienni, l’antiguitat equival al 20 % del salari base. El bienni inicial del 2,5 % no s’hi suma perquè queda substituït pel primer quadrienni.</p>`;
 }
 
 function dictionaryPricing(c){
