@@ -66,13 +66,13 @@ export function normalizedDictionary(){
 function payableSeniorityForExtra(joined,period){
  if(!joined||!/^\d{4}-\d{2}-\d{2}$/.test(joined))return null;
  const y=+period.slice(0,4),m=+period.slice(5);
- const end=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);
- let years=y-+joined.slice(0,4);
- const ann=`${y}-${joined.slice(5)}`;
- if(ann>end)years--;
- const quarters=Math.max(0,Math.floor(years/4));
- const initialBiennium=years>=2&&years<4;
- return {quarters,initialBiennium};
+ const effectDate=joined.endsWith('-01')
+  ? `${period}-01`
+  : new Date(Date.UTC(y,m-1,0)).toISOString().slice(0,10);
+ let years=+effectDate.slice(0,4)-+joined.slice(0,4);
+ const anniversary=`${+joined.slice(0,4)+years}-${joined.slice(5)}`;
+ if(anniversary>effectDate)years--;
+ return {quarters:Math.max(0,Math.floor(years/4)),initialBiennium:years>=2&&years<4};
 }
 function definitiveNightRate(period){
  if(!isPeriod(period))return null;
@@ -123,7 +123,7 @@ export function calculate(concept,{profile,facts,period,personal=null,history=[]
   if(!senior)return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:'Cal la data d’incorporació.'};
   const baseAmount=senior.quarters*rule.quarterRate+(senior.initialBiennium?rule.bienniumRate:0);
   const p=profile?.percent;
-  return {expected:typeof p==='number'&&p>0&&p<=100?baseAmount*p/100:null,state:typeof p==='number'&&p>0&&p<=100?'component':'pending',label:'Calculat',rule,labour:null,message:`${senior.quarters} quadriennis${senior.initialBiennium?' + bienni inicial':''} × tram documentat = ${baseAmount.toFixed(2)} € al 100 %. Després s’aplica el percentatge disponible de la paga. Desembre no es calcula amb aquesta regla.`};
+  return {expected:typeof p==='number'&&p>0&&p<=100?baseAmount*p/100:null,state:typeof p==='number'&&p>0&&p<=100?'component':'pending',label:'Estimació',rule,labour:null,message:`${senior.quarters} quadriennis${senior.initialBiennium?' + bienni inicial':''} × tram documentat = ${baseAmount.toFixed(2)} € al 100 %. Després s’aplica el percentatge disponible de Cómputo com a previsió; el percentatge efectiu de meritació de la paga pot diferir. Desembre no es calcula amb aquesta regla.`};
  }
  if(['tariff-only','vacation-average'].includes(rule.formula))return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:rule.message};}
  if(!rule)return {expected:null,state:'pending',rule:null,labour};
