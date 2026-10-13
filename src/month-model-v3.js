@@ -52,9 +52,9 @@ export const variableConcepts=[
 ].map(c=>({...c,kind:'variable'}));
 export const extraConcepts=[
  ['extra-salary','Salario Base'],['extra-seniority','Antigüedad'],['extra-fixed-premium','Prima Fija'],['extra-special-fixed','Plus Especial'],['extra-night','Turno Noche']
-].map(([id,name])=>({id,name:`${name} · Paga Extra`,family:name,kind:'extra',note:name==='Turno Noche'?'Mitjana monetària de la Nocturnidad Variable dels 12 mesos anteriors. No s’hi torna a aplicar el percentatge contractual; les regularitzacions s’imputen al període d’origen.':'Fórmula documental: base de la paga × percentatge contractual. Component íntegre; ajustos de meritació pendents.'}));
+].map(([id,name])=>({id,name:`${name} · Paga Extra`,family:name,kind:'extra',note:name==='Turno Noche'?'Mitjana monetària de la Nocturnidad Variable dels 12 mesos anteriors. No s’hi torna a aplicar el percentatge contractual; les regularitzacions s’imputen al període d’origen.':name==='Antigüedad'?'Març, juny i setembre: antiguitat reconeguda × valor del tram × percentatge aplicable de la paga. Desembre es manté pendent fins documentar-ne la regla específica.':'Fórmula documental: base de la paga × percentatge contractual. Component íntegre; ajustos de meritació pendents.'}));
 export function normalizedDictionary(){
- const groups=extraConcepts.map(c=>({...c,description:c.note,formula:c.id==='extra-night'?'Mitjana monetària dels 12 mesos anteriors de Nocturnidad Variable; desembre aplica el factor específic de la paga.':c.id==='extra-seniority'?'Base individual o regla pendent':'Base acreditada × percentatge contractual',aliases:[],kind:'extra'}));
+ const groups=extraConcepts.map(c=>({...c,description:c.note,formula:c.id==='extra-night'?'Mitjana monetària dels 12 mesos anteriors de Nocturnidad Variable; desembre aplica el factor específic de la paga.':c.id==='extra-seniority'?'Març, juny i setembre: quadriennis/bienni reconeguts × valor del tram × percentatge aplicable. Desembre: pendent de regla específica.':'Base acreditada × percentatge contractual',aliases:[],kind:'extra'}));
  const normal=[];
  for(const c of dictionary){
   const group=groups.find(g=>c.name.startsWith(g.family+' PE '));
@@ -62,6 +62,17 @@ export function normalizedDictionary(){
   else normal.push({...c,id:`dictionary-${c.id}`,aliases:[c.name]});
  }
  return [...normal,...groups];
+}
+function payableSeniorityForExtra(joined,period){
+ if(!joined||!/^\d{4}-\d{2}-\d{2}$/.test(joined))return null;
+ const y=+period.slice(0,4),m=+period.slice(5);
+ const end=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);
+ let years=y-+joined.slice(0,4);
+ const ann=`${y}-${joined.slice(5)}`;
+ if(ann>end)years--;
+ const quarters=Math.max(0,Math.floor(years/4));
+ const initialBiennium=years>=2&&years<4;
+ return {quarters,initialBiennium};
 }
 function definitiveNightRate(period){
  if(!isPeriod(period))return null;
@@ -96,6 +107,7 @@ export function ruleFor(concept,period){
  id==='extra-fixed-premium'&&[3,6,9].includes(month)?167.03:id==='extra-special-fixed'&&[3,6,9].includes(month)?287.51:null;
  if(base!==null)return {base,formula:'proportional',source:['aac','polyvalence'].includes(id)?'CGT · Complements 2026 i fitxa interna':'Bases explícites de les pagues extra i contrast longitudinal ordinari 2026',limit:'Component íntegre abans d’ajustos; no és el net a cobrar.'};
  if(id==='nona')return {rate:10.35,formula:'units',source:'CGT · Complements 2026; contrast dels rebuts ordinaris',unit:'h'};
+ if(id==='extra-seniority'&&[3,6,9].includes(month))return {formula:'extra-seniority',base:month===3?1459.67:1485.15,quarterRate:month===3?72.99:74.26,bienniumRate:month===3?36.49:37.13,source:'I-70 + contrast de pagues extra 2025–2026',message:'Març, juny i setembre: tram d’antiguitat reconegut × valor del tram × percentatge aplicable de la paga. Desembre queda pendent fins documentar la seva regla específica.'};
  if(id==='extra-night'&&[3,6,9,12].includes(month))return {formula:'night-average-12m',source:'I-102 · mitjana monetària de Nocturnidad Variable dels 12 mesos anteriors; contrast longitudinal de pagues extra 2024–2026',estimated:true,message:'No s’aplica de nou el percentatge contractual. Les revisions conegudes de tarifa es recalculen sobre el període d’origen; poden quedar diferències de cèntims per regularitzacions o primes de vacances.'};
  return null;
 }
@@ -104,6 +116,15 @@ export function calculate(concept,{profile,facts,period,personal=null,history=[]
  const percent=profile?.percent;
  if(rule){const own=personalCalculation(concept.id,rule,{personal,profile,period,history});if(own)return {...own,rule,labour:null,state:own.expected===null?'pending':'component',label:own.expected===null?'Regla coneguda':own.label};
  if(rule.formula==='night-average-12m'){const avg=extraNightAverage(history,period);return {...avg,rule,labour:null,state:avg.expected===null?'pending':'component'};}
+ if(rule.formula==='extra-seniority'){
+  const s=personalCalculation('seniority',{formula:'seniority',base:rule.base},{personal,profile,period,history});
+  if(!s||s.expected===null)return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:'Cal la data d’incorporació i el percentatge aplicable de la paga.'};
+  const senior=payableSeniorityForExtra(personal?.joined,period);
+  if(!senior)return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:'Cal la data d’incorporació.'};
+  const baseAmount=senior.quarters*rule.quarterRate+(senior.initialBiennium?rule.bienniumRate:0);
+  const p=profile?.percent;
+  return {expected:typeof p==='number'&&p>0&&p<=100?baseAmount*p/100:null,state:typeof p==='number'&&p>0&&p<=100?'component':'pending',label:'Calculat',rule,labour:null,message:`${senior.quarters} quadriennis${senior.initialBiennium?' + bienni inicial':''} × tram documentat = ${baseAmount.toFixed(2)} € al 100 %. Després s’aplica el percentatge disponible de la paga. Desembre no es calcula amb aquesta regla.`};
+ }
  if(['tariff-only','vacation-average'].includes(rule.formula))return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:rule.message};}
  if(!rule)return {expected:null,state:'pending',rule:null,labour};
  if(rule.formula==='proportional')return {expected:typeof percent==='number'&&Number.isFinite(percent)&&percent>0&&percent<=100?rule.base*percent/100:null,state:typeof percent==='number'&&percent>0&&percent<=100?'component':'pending',rule,labour:null};
