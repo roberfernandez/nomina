@@ -29,8 +29,8 @@ function labourText(l){
  return `${number(l.value)} ${l.unit==='day'?'dies':esc(l.unit)}${l.state==='complete'?'':' · subtotal conegut'}`;
 }
 function personal(){try{return readPersonal(localStorage,profileOwner(localStorage),today());}catch{return null;}}
-function card(c,data,facts,period){
- const result=calculate(c,{profile:data?.profile,facts,period,personal:personal()});
+function card(c,data,facts,period,history=[]){
+ const result=calculate(c,{profile:data?.profile,facts,period,personal:personal(),history});
  if(result.hidden)return '';
  const label=result.label||(result.expected===null?(result.rule?'Regla coneguda':'Pendent'):result.state==='partial'?'Estimació':'Calculat');
  const amount=result.expected===null?label:euros(result.expected);
@@ -57,7 +57,13 @@ function month(period){
  return `<a class="link" href="#">← Mesos de ${year}</a><p class="eyebrow">${ctx.state}</p><h1>${periodLabel(period)}</h1><section><h2>Resum de Cómputo · ${periodLabel(period)}</h2><p>${availability(data)}</p>${period===today().slice(0,7)?`<p>Acumulat fins al ${today()}. No inclou dies futurs del mes.</p>`:''}${summary(facts)}<p class="meta">Mes finalitzat no vol dir dades completes. No cal marcar Previsto/Confirmado. Els comptadors no acrediten automàticament el dret a cada plus.</p>${data?.syncedAt?`<p class="meta">Última sincronització: ${esc(data.syncedAt)}</p>`:''}</section><section><h2>Fixos / contractuals · nòmina ${periodLabel(period)}</h2><div class="pay-grid">${fixedConcepts.map(c=>card(c,data,facts,period)).join('')}</div></section><section class="variables-section"><p class="period-flow">Treball ${periodLabel(period)} · liquidació segons concepte</p><h2>Variables del mes treballat</h2><p>Nocturnitat, Convenio i Festivo E: mateix mes. Hora Nona: nòmina del mes següent. Les anomalies històriques no alteren els fets de Cómputo.</p><div class="pay-grid">${variables(period).map(c=>card(c,data,facts,c.timing==='same'?period:ctx.liquidation)).join('')}</div></section><details class="receipt-section"><summary>Variables a mes vençut de la nòmina ${periodLabel(period)}: treball ${periodLabel(previous)}</summary><p>${availability(prior)}</p><div class="pay-grid">${variables(period,true).map(c=>card(c,prior,priorFacts,period)).join('')}</div></details><section><h2>Pagues extra i endarreriments</h2><p>No formen part del total ordinari. No s’afegeixen ajustos sense període d’origen i regla acreditats.</p><a class="button secondary" href="#extras">Veure pagues extra</a><p><strong>Endarreriments: Pendent</strong> · No es pressuposa zero.</p></section>`;
 }
 function extras(){return `<h1>Pagues extra · ${year}</h1><p>El concepte és únic; el trimestre és el context de la paga. El mes imprès en alguns rebuts històrics no coincideix amb el nom de la paga.</p><div class="months-grid">${[3,6,9,12].map(m=>`<a class="month-card" href="#extra/${year}-${String(m).padStart(2,'0')}"><strong>${monthNames[m-1]}</strong><span>${year}</span></a>`).join('')}</div><a class="link" href="#">← Canviar any / Mesos</a>`;}
-function extra(period){ensure(period);const data=cache.get(period);return `<a class="link" href="#extras">← Pagues extra</a><h1>Paga extra · ${periodLabel(period)}</h1><p>${availability(data)}</p><p>Previsió del component íntegre amb el percentatge de Cómputo. Els ajustos de meritació no resolts continuen pendents; no s’importa cap rebut.</p><div class="pay-grid">${extraConcepts.map(c=>card(c,data,null,period)).join('')}</div>`;}
+function extra(period){
+ ensure(period);
+ const priorPeriods=Array.from({length:12},(_,i)=>shiftPeriod(period,-(i+1)));
+ priorPeriods.forEach(ensure);
+ const data=cache.get(period),history=priorPeriods.map(p=>cache.get(p)).filter(Boolean);
+ return `<a class="link" href="#extras">← Pagues extra</a><h1>Paga extra · ${periodLabel(period)}</h1><p>${availability(data)}</p><p>Previsió del component íntegre amb el percentatge de Cómputo. Turno Noche usa la mitjana monetària dels 12 mesos anteriors de Nocturnidad Variable quan l’historial és complet. Els ajustos de meritació no resolts continuen pendents; no s’importa cap rebut.</p><div class="pay-grid">${extraConcepts.map(c=>card(c,data,null,period,history)).join('')}</div>`;
+}
 const normalize=s=>s.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
 function economicConcept(c){
  return [...fixedConcepts,...variableConcepts,...extraConcepts].find(x=>x.id===c.id||x.name===c.name)||null;
@@ -99,6 +105,7 @@ function seniorityDictionaryPricing(){
 function dictionaryPricing(c){
  const concept=economicConcept(c);
  if(c.name==='Antigüedad')return seniorityDictionaryPricing();
+ if(c.id==='extra-night')return `<h2>Com es calcula?</h2><div class="calculation"><strong>Mitjana monetària dels 12 mesos anteriors</strong><p>Se sumen els imports definitius de <b>Nocturnidad Variable</b> dels 12 mesos anteriors i es divideixen entre 12.</p><p>No s’aplica de nou el percentatge contractual: els imports mensuals ja són personals.</p><p>Les revisions salarials conegudes es recalculen sobre el mes d’origen. A la paga de desembre, el contrast longitudinal mostra un factor específic d’1,3333 sobre la mitjana.</p><p class="meta">La previsió pot diferir alguns cèntims del rebut final per regularitzacions, imputacions de vacances o precisió interna de TMB. La regla base prové d’I-102 i el comportament de desembre queda identificat per contrast de pagues extra.</p></div>`;
  if(!concept)return '<h2>Tarifa / base documentada</h2><p class="meta">No hi ha una tarifa o base universal acreditada per a aquest concepte.</p>';
  const rows=[];
  for(let month=1;month<=12;month++){
