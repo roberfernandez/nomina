@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {dictionary} from '../src/dictionary-v2.js';
-import {shiftPeriod,periodContext,visibleFacts,unitsFor,fixedConcepts,variableConcepts,extraConcepts,normalizedDictionary,calculate,ruleFor} from '../src/month-model-v3.js';
+import {shiftPeriod,extraPaymentMonths,extraReferencePeriod,periodContext,visibleFacts,unitsFor,fixedConcepts,variableConcepts,extraConcepts,normalizedDictionary,calculate,ruleFor} from '../src/month-model-v3.js';
 const known=(value,unit)=>({state:'known',value,unit});
 const facts=()=>({schema:'computo-economic-facts-v1',producer:'computo-aac',version:'1',period:'2026-02',profile:{percent:50,turn:'T1'},days:Array.from({length:28},(_,i)=>({date:`2026-02-${String(i+1).padStart(2,'0')}`,metrics:{horaNonaHours:known(.25,'h'),nightPayableMinutes:known(60,'min'),plusFestiuDays:known(1,'day')}}))});
 test('V3 keeps work and liquidation distinct across years',()=>{
@@ -41,14 +41,17 @@ test('V3 extras normalize every original label exactly once',()=>{
  const list=normalizedDictionary();assert.equal(list.length,69);
  assert.deepEqual(list.flatMap(c=>c.aliases).sort(),dictionary.map(c=>c.name).sort());
  assert.equal(extraConcepts.length,5);assert.ok(extraConcepts.every(c=>!/(Marzo|Junio|Septiembre|Diciembre)/.test(c.id+c.name)));
- assert.equal(ruleFor(extraConcepts[0],'2026-12'),null);assert.equal(ruleFor(extraConcepts[0],'2026-06').base,1485.15);
+ assert.deepEqual(extraPaymentMonths,[3,7,9,12]);
+ assert.equal(extraReferencePeriod('2026-07'),'2026-06');
+ assert.equal(extraReferencePeriod('2026-03'),'2026-03');
+ assert.equal(ruleFor(extraConcepts[0],'2026-12'),null);assert.equal(ruleFor(extraConcepts[0],extraReferencePeriod('2026-07')).base,1485.15);
 });
 test('V3 unknown seniority, extra night and personal adjustments stay pending',()=>{
  for(const c of [fixedConcepts.find(c=>c.id==='seniority'),extraConcepts.find(c=>c.id==='extra-night')])assert.equal(calculate(c,{profile:{percent:100},period:'2026-06'}).expected,null);
 });
 test('V3 shipped UI is month first and never imports payrolls or original calendars',async()=>{
  const app=await readFile(new URL('../src/app-v3.js',import.meta.url),'utf8');
- assert.match(app,/months-grid/);assert.match(app,/loadPayrollFacts/);assert.match(app,/Endarreriments: Pendent/);
+ assert.match(app,/months-grid/);assert.match(app,/loadPayrollFacts/);assert.match(app,/Endarreriments: Pendent/);assert.match(app,/extraPaymentMonths/);assert.match(app,/extraReferencePeriod/);
  assert.doesNotMatch(app,/metro-year-|calcDay\(|documentary-examples|type="file"|observed/);
  assert.match(await readFile(new URL('../index.html',import.meta.url),'utf8'),/app-v3\.js/);
 });
