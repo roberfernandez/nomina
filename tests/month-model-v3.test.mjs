@@ -41,17 +41,19 @@ test('V3 extras normalize every original label exactly once',()=>{
  const list=normalizedDictionary();assert.equal(list.length,69);
  assert.deepEqual(list.flatMap(c=>c.aliases).sort(),dictionary.map(c=>c.name).sort());
  assert.equal(extraConcepts.length,5);assert.ok(extraConcepts.every(c=>!/(Marzo|Junio|Septiembre|Diciembre)/.test(c.id+c.name)));
- assert.deepEqual(extraPaymentMonths,[3,7,9,12]);
- assert.equal(extraReferencePeriod('2026-07'),'2026-06');
+ assert.deepEqual(extraPaymentMonths,[3,6,9,12]);
+ assert.equal(extraReferencePeriod('2026-06'),'2026-06');
  assert.equal(extraReferencePeriod('2026-03'),'2026-03');
- assert.equal(ruleFor(extraConcepts[0],'2026-12'),null);assert.equal(ruleFor(extraConcepts[0],extraReferencePeriod('2026-07')).base,1485.15);
+ assert.equal(ruleFor(extraConcepts[0],'2026-06').base,1485.15);
+ const decemberSalary=ruleFor(extraConcepts[0],'2026-12');assert.equal(decemberSalary.base,1485.15*1.3333);
+ const decemberSeniority=ruleFor(extraConcepts.find(c=>c.id==='extra-seniority'),'2026-12');assert.equal(decemberSeniority.factor,1.3333);
 });
 test('V3 unknown seniority, extra night and personal adjustments stay pending',()=>{
  for(const c of [fixedConcepts.find(c=>c.id==='seniority'),extraConcepts.find(c=>c.id==='extra-night')])assert.equal(calculate(c,{profile:{percent:100},period:'2026-06'}).expected,null);
 });
 test('V3 shipped UI is month first and never imports payrolls or original calendars',async()=>{
  const app=await readFile(new URL('../src/app-v3.js',import.meta.url),'utf8');
- assert.match(app,/months-grid/);assert.match(app,/loadPayrollFacts/);assert.match(app,/Endarreriments: Pendent/);assert.match(app,/extraPaymentMonths/);assert.match(app,/extraReferencePeriod/);
+ assert.match(app,/months-grid/);assert.match(app,/loadPayrollFacts/);assert.match(app,/Endarreriments: Pendent/);assert.match(app,/extraPaymentMonths/);assert.match(app,/extraReferencePeriod/);assert.match(app,/16,33 pagues/);assert.match(app,/Gratificació Vacances · Gener/);
  assert.doesNotMatch(app,/metro-year-|calcDay\(|documentary-examples|type="file"|observed/);
  assert.match(await readFile(new URL('../index.html',import.meta.url),'utf8'),/app-v3\.js/);
 });
