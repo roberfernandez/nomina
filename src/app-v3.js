@@ -2,7 +2,7 @@ import {createProfileSync,markProfileDirty} from './profile-sync.js';
 import {profileOwner,readPersonal,savePersonal} from './personal-profile.js';
 import {loadPayrollFacts} from './computo-cloud-v2.js';
 import {euros,percentage} from './economics-v2.js';
-import {monthNames,periodLabel,shiftPeriod,periodContext,visibleFacts,metrics,unitsFor,fixedConcepts,variableConcepts,extraConcepts,normalizedDictionary,calculate,isPeriod,ruleFor} from './month-model-v3.js';
+import {monthNames,extraPaymentMonths,extraReferencePeriod,periodLabel,shiftPeriod,periodContext,visibleFacts,metrics,unitsFor,fixedConcepts,variableConcepts,extraConcepts,normalizedDictionary,calculate,isPeriod,ruleFor} from './month-model-v3.js';
 
 const root=document.querySelector('main');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -56,13 +56,15 @@ function month(period){
  const facts=visibleFacts(data?.facts,period,today()),priorFacts=visibleFacts(prior?.facts,previous,today());
  return `<a class="link" href="#">← Mesos de ${year}</a><p class="eyebrow">${ctx.state}</p><h1>${periodLabel(period)}</h1><section><h2>Resum de Cómputo · ${periodLabel(period)}</h2><p>${availability(data)}</p>${period===today().slice(0,7)?`<p>Acumulat fins al ${today()}. No inclou dies futurs del mes.</p>`:''}${summary(facts)}<p class="meta">Mes finalitzat no vol dir dades completes. No cal marcar Previsto/Confirmado. Els comptadors no acrediten automàticament el dret a cada plus.</p>${data?.syncedAt?`<p class="meta">Última sincronització: ${esc(data.syncedAt)}</p>`:''}</section><section><h2>Fixos / contractuals · nòmina ${periodLabel(period)}</h2><div class="pay-grid">${fixedConcepts.map(c=>card(c,data,facts,period)).join('')}</div></section><section class="variables-section"><p class="period-flow">Treball ${periodLabel(period)} · liquidació segons concepte</p><h2>Variables del mes treballat</h2><p>Nocturnitat, Convenio i Festivo E: mateix mes. Hora Nona: nòmina del mes següent. Les anomalies històriques no alteren els fets de Cómputo.</p><div class="pay-grid">${variables(period).map(c=>card(c,data,facts,c.timing==='same'?period:ctx.liquidation)).join('')}</div></section><details class="receipt-section"><summary>Variables a mes vençut de la nòmina ${periodLabel(period)}: treball ${periodLabel(previous)}</summary><p>${availability(prior)}</p><div class="pay-grid">${variables(period,true).map(c=>card(c,prior,priorFacts,period)).join('')}</div></details><section><h2>Pagues extra i endarreriments</h2><p>No formen part del total ordinari. No s’afegeixen ajustos sense període d’origen i regla acreditats.</p><a class="button secondary" href="#extras">Veure pagues extra</a><p><strong>Endarreriments: Pendent</strong> · No es pressuposa zero.</p></section>`;
 }
-function extras(){return `<h1>Pagues extra · ${year}</h1><p>El concepte és únic; el trimestre és el context de la paga. El mes imprès en alguns rebuts històrics no coincideix amb el nom de la paga.</p><div class="months-grid">${[3,6,9,12].map(m=>`<a class="month-card" href="#extra/${year}-${String(m).padStart(2,'0')}"><strong>${monthNames[m-1]}</strong><span>${year}</span></a>`).join('')}</div><a class="link" href="#">← Canviar any / Mesos</a>`;}
-function extra(period){
- ensure(period);
- const priorPeriods=Array.from({length:12},(_,i)=>shiftPeriod(period,-(i+1)));
+function extras(){return `<h1>Pagues extra · ${year}</h1><p>Les pagues s’identifiquen pel mes de la paga: març, juliol, setembre i desembre. La paga de juliol liquida conceptes interns denominats PE Juny.</p><div class="months-grid">${extraPaymentMonths.map(m=>`<a class="month-card" href="#extra/${year}-${String(m).padStart(2,'0')}"><strong>${monthNames[m-1]}</strong><span>${year}</span></a>`).join('')}</div><a class="link" href="#">← Canviar any / Mesos</a>`;}
+function extra(paymentPeriod){
+ const referencePeriod=extraReferencePeriod(paymentPeriod);
+ ensure(referencePeriod);
+ const priorPeriods=Array.from({length:12},(_,i)=>shiftPeriod(referencePeriod,-(i+1)));
  priorPeriods.forEach(ensure);
- const data=cache.get(period),history=priorPeriods.map(p=>cache.get(p)).filter(Boolean);
- return `<a class="link" href="#extras">← Pagues extra</a><h1>Paga extra · ${periodLabel(period)}</h1><p>${availability(data)}</p><p>Previsió del component íntegre amb el percentatge de Cómputo. Turno Noche usa la mitjana monetària dels 12 mesos anteriors de Nocturnidad Variable quan l’historial és complet. Els ajustos de meritació no resolts continuen pendents; no s’importa cap rebut.</p><div class="pay-grid">${extraConcepts.map(c=>card(c,data,null,period,history)).join('')}</div>`;
+ const data=cache.get(referencePeriod),history=priorPeriods.map(p=>cache.get(p)).filter(Boolean);
+ const julyNote=paymentPeriod.endsWith('-07')?`<p class="meta">Aquesta paga correspon a juliol, però els conceptes del rebut es denominen PE Juny i es calculen amb juny com a període de referència.</p>`:'';
+ return `<a class="link" href="#extras">← Pagues extra</a><h1>Paga extra · ${periodLabel(paymentPeriod)}</h1><p>${availability(data)}</p>${julyNote}<p>Previsió del component íntegre amb el percentatge de Cómputo. Turno Noche usa la mitjana monetària dels 12 mesos anteriors al període de referència quan l’historial és complet. Els ajustos de meritació no resolts continuen pendents; no s’importa cap rebut.</p><div class="pay-grid">${extraConcepts.map(c=>card(c,data,null,referencePeriod,history)).join('')}</div>`;
 }
 const normalize=s=>s.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
 function economicConcept(c){
@@ -106,11 +108,12 @@ function dictionaryPricing(c){
  const concept=economicConcept(c);
  if(c.name==='Antigüedad')return seniorityDictionaryPricing();
  if(c.id==='extra-night')return `<h2>Com es calcula?</h2><div class="calculation"><strong>Mitjana monetària dels 12 mesos anteriors</strong><p>Se sumen els imports definitius de <b>Nocturnidad Variable</b> dels 12 mesos anteriors i es divideixen entre 12.</p><p>No s’aplica de nou el percentatge contractual: els imports mensuals ja són personals.</p><p>Les revisions salarials conegudes es recalculen sobre el mes d’origen. A la paga de desembre, el contrast longitudinal mostra un factor específic d’1,3333 sobre la mitjana.</p><p class="meta">La previsió pot diferir alguns cèntims del rebut final per regularitzacions, imputacions de vacances o precisió interna de TMB. La regla base prové d’I-102 i el comportament de desembre queda identificat per contrast de pagues extra.</p></div>`;
- if(c.id==='extra-seniority')return `<h2>Com es calcula?</h2><div class="calculation"><strong>Març, juny i setembre</strong><p>Es pren l’antiguitat reconeguda en la data d’efecte, es multiplica pel valor documentat de cada tram i després pel percentatge aplicable de la paga.</p><p><b>2026:</b> març · quadrienni 72,99 € / bienni 36,49 €; juny i setembre · quadrienni 74,26 € / bienni 37,13 €.</p><p>Exemple juny 2026: 6 quadriennis × 74,26 € = 445,56 € al 100 %. Amb 85,81 %: 382,34 €.</p><p class="meta">El percentatge de Cómputo s’utilitza com a previsió; el percentatge efectiu de meritació d’una paga concreta pot diferir. La paga de desembre es manté pendent perquè té una regla específica encara no reconstruïda amb prou dades.</p></div>`;
+ if(c.id==='extra-seniority')return `<h2>Com es calcula?</h2><div class="calculation"><strong>Març, juliol i setembre</strong><p>Es pren l’antiguitat reconeguda en la data d’efecte, es multiplica pel valor documentat de cada tram i després pel percentatge aplicable de la paga.</p><p><b>2026:</b> març · quadrienni 72,99 € / bienni 36,49 €; juliol i setembre · quadrienni 74,26 € / bienni 37,13 €. La paga de juliol correspon als conceptes PE Juny.</p><p>Exemple juny 2026: 6 quadriennis × 74,26 € = 445,56 € al 100 %. Amb 85,81 %: 382,34 €.</p><p class="meta">El percentatge de Cómputo s’utilitza com a previsió; el percentatge efectiu de meritació d’una paga concreta pot diferir. La paga de desembre es manté pendent perquè té una regla específica encara no reconstruïda amb prou dades.</p></div>`;
  if(!concept)return '<h2>Tarifa / base documentada</h2><p class="meta">No hi ha una tarifa o base universal acreditada per a aquest concepte.</p>';
  const rows=[];
- for(let month=1;month<=12;month++){
-  const period=`2026-${String(month).padStart(2,'0')}`,rule=ruleFor(concept,period),price=rulePrice(rule,concept);
+ const displayMonths=concept.kind==='extra'?extraPaymentMonths:Array.from({length:12},(_,i)=>i+1);
+ for(const month of displayMonths){
+  const paymentPeriod=`2026-${String(month).padStart(2,'0')}`,period=concept.kind==='extra'?extraReferencePeriod(paymentPeriod):paymentPeriod,rule=ruleFor(concept,period),price=rulePrice(rule,concept);
   if(!rule||!price)continue;
   const key=JSON.stringify({price,source:rule.source,message:rule.message||'',estimated:!!rule.estimated,formula:rule.formula});
   let row=rows.find(x=>x.key===key);
