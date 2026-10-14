@@ -3,7 +3,7 @@ import {dictionary} from './dictionary-v2.js';
 import {aggregateFacts,accumulatedFacts} from './economics-v2.js';
 
 export const monthNames=['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
-export const extraPaymentMonths=[3,7,9,12];
+export const extraPaymentMonths=[3,6,9,12];
 export const isPeriod=p=>typeof p==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(p);
 export function shiftPeriod(period,delta){
  if(!isPeriod(period)||!Number.isInteger(delta))throw Error('Període no vàlid');
@@ -12,7 +12,7 @@ export function shiftPeriod(period,delta){
 }
 export function extraReferencePeriod(paymentPeriod){
  if(!isPeriod(paymentPeriod))throw Error('Període no vàlid');
- return paymentPeriod.endsWith('-07')?shiftPeriod(paymentPeriod,-1):paymentPeriod;
+ return paymentPeriod;
 }
 export const periodLabel=p=>`${monthNames[+p.slice(5)-1]} ${p.slice(0,4)}`;
 export function periodContext(period,today){
@@ -57,9 +57,9 @@ export const variableConcepts=[
 ].map(c=>({...c,kind:'variable'}));
 export const extraConcepts=[
  ['extra-salary','Salario Base'],['extra-seniority','Antigüedad'],['extra-fixed-premium','Prima Fija'],['extra-special-fixed','Plus Especial'],['extra-night','Turno Noche']
-].map(([id,name])=>({id,name:`${name} · Paga Extra`,family:name,kind:'extra',note:name==='Turno Noche'?'Mitjana monetària de la Nocturnidad Variable dels 12 mesos anteriors. No s’hi torna a aplicar el percentatge contractual; les regularitzacions s’imputen al període d’origen.':name==='Antigüedad'?'Març, juliol i setembre: antiguitat reconeguda × valor del tram × percentatge aplicable de la paga. La paga de juliol correspon als conceptes PE Juny. Desembre es manté pendent fins documentar-ne la regla específica.':'Fórmula documental: base de la paga × percentatge contractual. Component íntegre; ajustos de meritació pendents.'}));
+].map(([id,name])=>({id,name:`${name} · Paga Extra`,family:name,kind:'extra',note:name==='Turno Noche'?'Mitjana monetària de la Nocturnidad Variable dels 12 mesos anteriors. No s’hi torna a aplicar el percentatge contractual; les regularitzacions s’imputen al període d’origen.':name==='Antigüedad'?'Març, juny i setembre: antiguitat reconeguda × valor del tram × percentatge aplicable. Desembre aplica el factor 1,3333 acreditat per a l’antiguitat.':'Fórmula documental: base de la paga × percentatge contractual. Component íntegre; ajustos de meritació pendents.'}));
 export function normalizedDictionary(){
- const groups=extraConcepts.map(c=>({...c,description:c.note,formula:c.id==='extra-night'?'Mitjana monetària dels 12 mesos anteriors de Nocturnidad Variable; desembre aplica el factor específic de la paga.':c.id==='extra-seniority'?'Març, juliol i setembre: quadriennis/bienni reconeguts × valor del tram × percentatge aplicable. Juliol liquida conceptes PE Juny. Desembre: pendent de regla específica.':'Base acreditada × percentatge contractual',aliases:[],kind:'extra'}));
+ const groups=extraConcepts.map(c=>({...c,description:c.note,formula:c.id==='extra-night'?'Mitjana monetària dels 12 mesos anteriors de Nocturnidad Variable; desembre aplica el factor específic de la paga.':c.id==='extra-seniority'?'Març, juny i setembre: quadriennis/bienni reconeguts × valor del tram × percentatge aplicable. Desembre: mateixa base d’antiguitat × factor 1,3333.':'Base acreditada × percentatge contractual',aliases:[],kind:'extra'}));
  const normal=[];
  for(const c of dictionary){
   const group=groups.find(g=>c.name.startsWith(g.family+' PE '));
@@ -99,8 +99,8 @@ function extraNightAverage(history,period){
  }
  const base=rows.reduce((s,r)=>s+r.amount,0)/12;
  const december=period.endsWith('-12');
- const expected=base*(december?4/3:1);
- return {expected,label:'Estimació',message:`Mitjana monetària de 12 mesos: ${rows.reduce((s,r)=>s+r.amount,0).toFixed(2)} € / 12${december?' × 1,3333 (factor de la paga de desembre)':''}. Es recalculen els mesos amb la tarifa definitiva coneguda i no s’aplica de nou el percentatge contractual. Pot haver-hi diferències de cèntims per regularitzacions o primes de vacances.`};
+ const expected=base*(december?1.3333:1);
+ return {expected,label:'Estimació',message:`Mitjana monetària de 12 mesos: ${rows.reduce((s,r)=>s+r.amount,0).toFixed(2)} € / 12${december?' × 1,3333 (factor observat a la paga de desembre; fórmula completa encara pendent de fitxa original)':''}. Es recalculen els mesos amb la tarifa definitiva coneguda i no s’aplica de nou el percentatge contractual. Pot haver-hi diferències de cèntims per regularitzacions o primes de vacances.`};
 }
 export function ruleFor(concept,period){
  if(!isPeriod(period))return null;
@@ -108,8 +108,8 @@ export function ruleFor(concept,period){
  if(!isPeriod(period)||period.slice(0,4)!=='2026')return null;
  const month=+period.slice(5), id=concept.id;
  const base=id==='salary'?(month<=3?1459.67:1485.15):id==='fixed-premium'?167.03:id==='special-fixed'?287.51:id==='aac'?133.10:id==='polyvalence'?75.14:
- id==='extra-salary'?({3:1459.67,6:1485.15,9:1485.15}[month]??null):
- id==='extra-fixed-premium'&&[3,6,9].includes(month)?167.03:id==='extra-special-fixed'&&[3,6,9].includes(month)?287.51:null;
+ id==='extra-salary'?({3:1459.67,6:1485.15,9:1485.15,12:1485.15*1.3333}[month]??null):
+ id==='extra-fixed-premium'&&[3,6,9,12].includes(month)?167.03:id==='extra-special-fixed'&&[3,6,9,12].includes(month)?287.51:null;
  if(base!==null)return {base,formula:'proportional',source:['aac','polyvalence'].includes(id)?'CGT · Complements 2026 i fitxa interna':'Bases explícites de les pagues extra i contrast longitudinal ordinari 2026',limit:'Component íntegre abans d’ajustos; no és el net a cobrar.'};
  if(id==='nona')return {rate:10.35,formula:'units',source:'CGT · Complements 2026; contrast dels rebuts ordinaris',unit:'h'};
  if(id==='extra-seniority'&&[3,6,9].includes(month))return {formula:'extra-seniority',base:month===3?1459.67:1485.15,quarterRate:month===3?72.99:74.26,bienniumRate:month===3?36.49:37.13,source:'I-70 + contrast de pagues extra 2025–2026',message:'Març, juliol i setembre: tram d’antiguitat reconegut × valor del tram × percentatge aplicable de la paga. La paga de juliol utilitza el període de referència de juny. Desembre queda pendent fins documentar la seva regla específica.'};
