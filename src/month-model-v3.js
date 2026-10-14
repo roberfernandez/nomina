@@ -112,7 +112,7 @@ export function ruleFor(concept,period){
  id==='extra-fixed-premium'&&[3,6,9,12].includes(month)?167.03:id==='extra-special-fixed'&&[3,6,9,12].includes(month)?287.51:null;
  if(base!==null)return {base,formula:'proportional',source:['aac','polyvalence'].includes(id)?'CGT · Complements 2026 i fitxa interna':'Bases explícites de les pagues extra i contrast longitudinal ordinari 2026',limit:'Component íntegre abans d’ajustos; no és el net a cobrar.'};
  if(id==='nona')return {rate:10.35,formula:'units',source:'CGT · Complements 2026; contrast dels rebuts ordinaris',unit:'h'};
- if(id==='extra-seniority'&&[3,6,9].includes(month))return {formula:'extra-seniority',base:month===3?1459.67:1485.15,quarterRate:month===3?72.99:74.26,bienniumRate:month===3?36.49:37.13,source:'I-70 + contrast de pagues extra 2025–2026',message:'Març, juliol i setembre: tram d’antiguitat reconegut × valor del tram × percentatge aplicable de la paga. La paga de juliol utilitza el període de referència de juny. Desembre queda pendent fins documentar la seva regla específica.'};
+ if(id==='extra-seniority'&&[3,6,9,12].includes(month))return {formula:'extra-seniority',base:month===3?1459.67:1485.15,quarterRate:month===3?72.99:74.26,bienniumRate:month===3?36.49:37.13,factor:month===12?1.3333:1,source:'I-70 + contrast longitudinal de pagues extra 2020–2026',message:month===12?'Desembre: antiguitat reconeguda × valor del tram × factor 1,3333 × percentatge aplicable. El factor està acreditat per rebuts i documentació; no s’estén a altres conceptes sense prova.':'Març, juny i setembre: tram d’antiguitat reconegut × valor del tram × percentatge aplicable de la paga.'};
  if(id==='extra-night'&&[3,6,9,12].includes(month))return {formula:'night-average-12m',source:'I-102 · mitjana monetària de Nocturnidad Variable dels 12 mesos anteriors; contrast longitudinal de pagues extra 2024–2026',estimated:true,message:'No s’aplica de nou el percentatge contractual. Les revisions conegudes de tarifa es recalculen sobre el període d’origen; poden quedar diferències de cèntims per regularitzacions o primes de vacances.'};
  return null;
 }
@@ -126,9 +126,11 @@ export function calculate(concept,{profile,facts,period,personal=null,history=[]
   if(!s||s.expected===null)return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:'Cal la data d’incorporació i el percentatge aplicable de la paga.'};
   const senior=payableSeniorityForExtra(personal?.joined,period);
   if(!senior)return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:'Cal la data d’incorporació.'};
-  const baseAmount=senior.quarters*rule.quarterRate+(senior.initialBiennium?rule.bienniumRate:0);
+  const ordinaryBase=senior.quarters*rule.quarterRate+(senior.initialBiennium?rule.bienniumRate:0);
+  const baseAmount=ordinaryBase*(rule.factor||1);
   const p=profile?.percent;
-  return {expected:typeof p==='number'&&p>0&&p<=100?baseAmount*p/100:null,state:typeof p==='number'&&p>0&&p<=100?'component':'pending',label:'Estimació',rule,labour:null,message:`${senior.quarters} quadriennis${senior.initialBiennium?' + bienni inicial':''} × tram documentat = ${baseAmount.toFixed(2)} € al 100 %. Després s’aplica el percentatge disponible de Cómputo com a previsió; el percentatge efectiu de meritació de la paga pot diferir. Desembre no es calcula amb aquesta regla.`};
+  const factorText=rule.factor&&rule.factor!==1?` × ${rule.factor.toFixed(4)} = ${baseAmount.toFixed(2)} €`:'';
+  return {expected:typeof p==='number'&&p>0&&p<=100?baseAmount*p/100:null,state:typeof p==='number'&&p>0&&p<=100?'component':'pending',label:'Estimació',rule,labour:null,message:`${senior.quarters} quadriennis${senior.initialBiennium?' + bienni inicial':''} × tram documentat = ${ordinaryBase.toFixed(2)} €${factorText} al 100 %. Després s’aplica el percentatge disponible de Cómputo com a previsió; el percentatge efectiu de meritació de la paga pot diferir.`};
  }
  if(['tariff-only','vacation-average'].includes(rule.formula))return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:rule.message};}
  if(!rule)return {expected:null,state:'pending',rule:null,labour};
