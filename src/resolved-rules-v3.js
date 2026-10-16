@@ -26,7 +26,7 @@ export function familyUnits(personal,period){
 }
 export function additionalRule(id,period){
  const year=+period.slice(0,4),m=+period.slice(5);
- if(id==='official-holiday'&&[2025,2026].includes(year))return {rate:year===2025?72.88:77.23,formula:'tariff-only',unit:'day',source:'Taula / contrast documental del període',message:'Unitats encara no derivables automàticament.'};
+ if(id==='official-holiday'&&[2025,2026].includes(year))return {rate:year===2025?84.93:90,formula:'tariff-only',unit:'day',source:'Taula / contrast documental del període',message:'Unitats encara no derivables automàticament.'};
  if(year!==2026)return null;
  const common={source:'Contrast documental 2026',formula:'units',unit:'day'};
  if(id==='night')return {...common,rate:m<=3?2.79:2.84,unit:'h',estimated:true,message:'Import estimat amb tarifa impresa; la precisió interna de TMB pot produir diferències de cèntims.'};

@@ -35,10 +35,10 @@ test('Convenio and candidate festive E use original units only',()=>{
  assert.equal(calculate(c('conveni'),{period:'2026-04'}).expected,null);
 });
 test('known tariffs do not invent official/special-day entitlement',()=>{
- assert.equal(ruleFor(c('official-holiday'),'2025-01').rate,72.88);
- assert.equal(ruleFor(c('official-holiday'),'2026-01').rate,77.23);
+ assert.equal(ruleFor(c('official-holiday'),'2025-01').rate,84.93);
+ assert.equal(ruleFor(c('official-holiday'),'2026-01').rate,90);
  const r=calculate(c('special-day'),{period:'2026-01',facts:facts('specialRetributiveDays',2,'day','2026-01')});
- assert.equal(r.expected,null);assert.equal(r.labour,null);assert.equal(r.rule.rate,202.39);assert.equal(r.label,'Regla coneguda');
+ assert.equal(r.expected,null);assert.equal(r.labour,null);assert.equal(r.label,'Falten dades');
 });
 test('family counts zero, two and three without contract percentage; ten payments',()=>{
  const p=personal(null,['2018-01-01','2017-01-01','2015-01-01']);
@@ -71,7 +71,7 @@ test('annual vacation labels constant-percent hypothesis and prorates employment
 });
 test('vacation average remains known rule, not invented vacation days or double proration',()=>{
  const r=calculate(c('vacation-premiums'),{period:'2026-08',profile:{percent:50}});
- assert.equal(r.expected,null);assert.equal(r.label,'Regla coneguda');assert.match(r.message,/12 mesos/);
+ assert.equal(r.expected,null);assert.equal(r.label,'Falten dades');assert.match(r.message,/Còmput/);
 });
 test('profile stores dates only, isolates accounts and rejects invalid inputs',()=>{
  const m=new Map(),storage={getItem:k=>m.get(k),setItem:(k,v)=>m.set(k,v)};

@@ -25,7 +25,9 @@ export function parseComputoFacts(raw) {
         metrics[key]={state:'known',value:m.value,unit};
       }else metrics[key]={state:'pending',value:null,unit,reason:label(m?.reason)||'Resultado no disponible en Cómputo'};
     }
-    return {date:d.date,schedule:label(d.schedule),profile:profileFromComputo(d.profile||x.profile),metrics};
+    const a=d.activity;
+    const activity=a?.version===1?{version:1,status:label(a.status),priorOrigin:label(a.priorOrigin),working:typeof a.working==='boolean'?a.working:null,ordinary:typeof a.ordinary==='boolean'?a.ordinary:null,weeklyRest:typeof a.weeklyRest==='boolean'?a.weeklyRest:null,scheduleResolved:a.scheduleResolved===true,vacation:typeof a.vacation==='boolean'?a.vacation:null}:null;
+    return {date:d.date,activity,schedule:label(d.schedule),profile:profileFromComputo(d.profile||x.profile),metrics};
   });
   return {schema:x.schema,producer:x.producer,version:label(x.version),period:x.period,profile:profileFromComputo(x.profile),days};
 }

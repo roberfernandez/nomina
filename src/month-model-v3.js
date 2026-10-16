@@ -1,3 +1,4 @@
+import {calculateEntitlement} from './entitlement-rules.js';
 import {additionalRule,personalCalculation} from './resolved-rules-v3.js';
 import {dictionary} from './dictionary-v2.js';
 import {aggregateFacts,accumulatedFacts} from './economics-v2.js';
@@ -46,10 +47,10 @@ export const variableConcepts=[
  {id:'night',name:'Nocturnidad Variable',timing:'same',metric:'nightPayableMinutes',note:'Minuts abonables resolts per Cómputo. Tarifa impresa vigent del mateix mes; import estimat.'},
  {id:'nona',name:'Prima Hora Nona',metric:'horaNonaHours',note:'Unitats resoltes per Cómputo × tarifa. Les diferències històriques de període no modifiquen aquestes unitats.'},
  {id:'conveni',name:'Plus Convenio',timing:'same',metric:'plusConveniDays',note:'Unitats resoltes per Cómputo × 3,81 € el 2026, sense recalcular dies ni aplicar de nou el percentatge.'},
- {id:'official-holiday',name:'Plus Festivo Oficial',metric:null,note:'Concepte diferent del diumenge treballat i del Dia Especial. El seu nombre d’unitats no existeix encara en l’export.'},
+ {id:'official-holiday',name:'Plus Festivo Oficial',metric:null,note:'Festiu laboral, hores efectives, descans propi i compatibilitats. Import proporcional a la jornada.'},
  {id:'worked-holiday-e',name:'P.Festivo Trabajado E',timing:'same',metric:'plusFestiuDays',note:'Estimació provisional amb diumenges treballats; gener i març presenten anomalies. E no s’interpreta com a Especial.'},
  {id:'worked-holiday',historical:true,name:'Plus Festivo Trabajado',metric:'workedHolidayDays',note:'Es conserva separat de la variant E. Sense una equivalència acreditada no se sumen ni s’intercanvien.'},
- {id:'special-day',name:'Plus día Especial',metric:null,note:'Les dates especials treballades són un fet laboral. La seva equivalència amb el plus retribuït, franges i compatibilitats continua pendent.'},
+ {id:'special-day',name:'Plus día Especial',metric:null,note:'Servei efectiu ordinari entre les 23 h de la vigília i les 18 h del dia especial. Un import per esdeveniment.'},
  {id:'vacation-bonus',timing:'same',annual:true,name:'Gratificación Vacaciones',metric:null,note:'No és Primas en Vacaciones. No es generalitza l’import d’un rebut individual.'},
  {id:'vacation-premiums',timing:'same',name:'Primas en Vacaciones',metric:null,note:'Requereix mitjana individual acreditada i unitats específiques. No es dedueix dels PDF de l’usuari.'},
  {id:'nursery',timing:'same',name:'Ayuda Guardería',metric:null,note:'Ajuda per fill menor de 3 anys, sense percentatge contractual. Criteri provisional.'},
@@ -116,7 +117,11 @@ export function ruleFor(concept,period){
  if(id==='extra-night'&&[3,6,9,12].includes(month))return {formula:'night-average-12m',source:'I-102 · mitjana monetària de Nocturnidad Variable dels 12 mesos anteriors; contrast longitudinal de pagues extra 2024–2026',estimated:true,message:'No s’aplica de nou el percentatge contractual. Les revisions conegudes de tarifa es recalculen sobre el període d’origen; poden quedar diferències de cèntims per regularitzacions o primes de vacances.'};
  return null;
 }
-export function calculate(concept,{profile,facts,period,personal=null,history=[]}){
+export function calculate(concept,{profile,facts,period,personal=null,history=[],vacationBasis=null}){
+ if(['official-holiday','special-day','vacation-premiums'].includes(concept.id)){
+  const own=calculateEntitlement(concept.id,{facts,profile,period,history,vacationBasis});
+  return {...own,rule:{source:concept.id==='vacation-premiums'?'I-98 · Primes en vacances':'I-78 · Conveni FMB, arts. 9–12'}};
+ }
  const rule=ruleFor(concept,period),labour=concept.metric?unitsFor(facts,concept.metric):null;
  const percent=profile?.percent;
  if(rule){const own=personalCalculation(concept.id,rule,{personal,profile,period,history});if(own)return {...own,rule,labour:null,state:own.expected===null?'pending':'component',label:own.expected===null?'Regla coneguda':own.label};

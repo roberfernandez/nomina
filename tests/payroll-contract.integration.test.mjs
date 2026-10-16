@@ -27,6 +27,9 @@ test('real producer → computo_sync payload → a different device consumer', {
  let calls=0;
  const remote=await loadPayrollFacts('2026-01',{getItem:k=>k==='sb-hhenkvendzengggrgook-auth-token'?JSON.stringify(session):null},async()=>({ok:true,json:async()=>++calls===1?{id:'test-user'}:calls===2?[{estado:'aprobado'}]:[{payload:cloud.get(key)}]}));
  assert.equal(remote.profile.percent,75);
+ assert.equal(remote.facts.days[0].activity.version,1);
+ assert.equal(remote.facts.days[0].activity.status,'AGCG');
+ assert.equal(remote.facts.days[0].activity.scheduleResolved,true);
  assert.equal(aggregateFacts(remote.facts,'ordinaryHours').value,9);
  assert.equal(aggregateFacts(remote.facts,'horaNonaHours').value,1);
  assert.equal(aggregateFacts(remote.facts,'ordinaryHours').missing,30);
