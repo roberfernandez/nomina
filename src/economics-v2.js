@@ -1,5 +1,5 @@
 // V2 boundary: labour facts come from Cómputo, never from payroll PDFs.
-export const units = Object.freeze({ordinaryHours:'h',nightPayableMinutes:'min',horaNonaHours:'h',workedHolidayDays:'day',specialRetributiveDays:'day',plusFestiuDays:'day',plusConveniDays:'day'});
+export const units = Object.freeze({ordinaryHours:'h',nightPayableMinutes:'min',nightPayableHours:'h',horaNonaHours:'h',workedHolidayDays:'day',specialRetributiveDays:'day',plusFestiuDays:'day',plusConveniDays:'day'});
 const finite = x => typeof x === 'number' && Number.isFinite(x);
 const periodOK = x => typeof x === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(x);
 const dateOK = x => typeof x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x) && Number.isFinite(Date.parse(x)) && new Date(x+'T12:00:00Z').toISOString().slice(0,10) === x;
@@ -29,7 +29,7 @@ export function parseComputoFacts(raw) {
     const activity=a?.version===1?{version:1,status:label(a.status),priorOrigin:label(a.priorOrigin),working:typeof a.working==='boolean'?a.working:null,ordinary:typeof a.ordinary==='boolean'?a.ordinary:null,weeklyRest:typeof a.weeklyRest==='boolean'?a.weeklyRest:null,scheduleResolved:a.scheduleResolved===true,vacation:typeof a.vacation==='boolean'?a.vacation:null}:null;
     return {date:d.date,activity,schedule:label(d.schedule),profile:profileFromComputo(d.profile||x.profile),metrics};
   });
-  return {schema:x.schema,producer:x.producer,version:label(x.version),period:x.period,profile:profileFromComputo(x.profile),days};
+  return {schema:x.schema,producer:x.producer,version:label(x.version),period:x.period,nightHoursMethod:x.nightHoursMethod==='daily-rounded-2'?x.nightHoursMethod:null,profile:profileFromComputo(x.profile),days};
 }
 export function readAvailableComputo(storage,period) {
   if(!periodOK(period))throw Error('Periodo inválido');
@@ -48,7 +48,8 @@ export function aggregateFacts(facts,metric) {
   const checked=parseComputoFacts(facts);
   const daysInMonth=new Date(Date.UTC(+checked.period.slice(0,4),+checked.period.slice(5),0)).getUTCDate();
   let value=0,known=0,pending=0;
-  for(const d of checked.days.filter(d=>!facts.through||d.date<=facts.through)){const m=d.metrics[metric];if(m.state==='known'){known++;value+=m.value;}else pending++;}
+  for(const d of checked.days.filter(d=>!facts.through||d.date<=facts.through)){const m=d.metrics[metric];if(m.state==='known'){known++;value+=metric==='nightPayableHours'?Math.round(m.value*100):m.value;}else pending++;}
+  if(metric==='nightPayableHours')value/=100;
   const through=facts.through;
   if(through&&(!dateOK(through)||!through.startsWith(checked.period+'-')))throw Error('Fecha fuera del periodo');
   const missing=(through?Number(through.slice(-2)):daysInMonth)-checked.days.filter(d=>!through||d.date<=through).length;

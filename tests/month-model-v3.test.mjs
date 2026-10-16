@@ -57,3 +57,19 @@ test('V3 shipped UI is month first and never imports payrolls or original calend
  assert.doesNotMatch(app,/metro-year-|calcDay\(|documentary-examples|type="file"|observed/);
  assert.match(await readFile(new URL('../index.html',import.meta.url),'utf8'),/app-v3\.js/);
 });
+
+test('Nòmina uses Còmput daily-rounded payable hours without reconverting raw minutes',()=>{
+ const f=facts();f.nightHoursMethod='daily-rounded-2';
+ for(const d of f.days){d.metrics.nightPayableMinutes=known(170,'min');d.metrics.nightPayableHours=known(2.83,'h');}
+ assert.equal(unitsFor(f,'nightPayableMinutes').value,79.24);
+ const r=calculate(variableConcepts.find(c=>c.id==='night'),{period:'2026-04',facts:f});
+ assert.equal(r.expected.toFixed(2),'225.04');
+});
+
+test('97 raw hours remain 96.97 payable hours after the producer daily rounding',()=>{
+ const minutes=[...Array(13).fill(170),...Array(4).fill(484),...Array(3).fill(510),144,...Array(9).fill(0)];
+ const f={schema:'computo-economic-facts-v1',producer:'computo-aac',version:'1',period:'2026-04',nightHoursMethod:'daily-rounded-2',days:minutes.map((m,i)=>({date:`2026-04-${String(i+1).padStart(2,'0')}`,metrics:{nightPayableMinutes:known(m,'min'),nightPayableHours:known(Number((m/60).toFixed(2)),'h')}}))};
+ assert.equal(minutes.reduce((a,b)=>a+b,0)/60,97);
+ assert.equal(unitsFor(f,'nightPayableMinutes').value,96.97);
+ assert.equal(calculate(variableConcepts.find(c=>c.id==='night'),{period:'2026-04',facts:f}).expected.toFixed(2),'275.39');
+});

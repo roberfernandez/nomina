@@ -31,8 +31,9 @@ export const metrics=[
  ['plusFestiuDays','Plus Festiu · comptador','dies'],['specialRetributiveDays','Dies especials treballats','dies']
 ];
 export function unitsFor(facts,metric){
- const r=aggregateFacts(facts,metric);
- return {...r,value:r.value===null?null:metric==='nightPayableMinutes'?r.value/60:r.value,unit:metric==='nightPayableMinutes'?'h':r.unit};
+ const dailyHours=metric==='nightPayableMinutes'&&facts?.nightHoursMethod==='daily-rounded-2';
+ const r=aggregateFacts(facts,dailyHours?'nightPayableHours':metric);
+ return {...r,value:r.value===null?null:metric==='nightPayableMinutes'&&!dailyHours?r.value/60:r.value,unit:metric==='nightPayableMinutes'?'h':r.unit};
 }
 const fixedData=[
  ['salary','Salario Base','Retribució mensual corresponent a la teva categoria professional i jornada contractual. Les altes, baixes i absències poden modificar l’import del mes.'],
