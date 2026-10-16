@@ -82,3 +82,27 @@ test('profile stores dates only, isolates accounts and rejects invalid inputs',(
  assert.throws(()=>cleanPersonal(personal(null,['2026-02-30']),'2026-10-04'));
  assert.throws(()=>cleanPersonal(personal('2027-01-01'),'2026-10-04'));
 });
+
+test('ordinary seniority uses period-specific quarter tariffs instead of reconstructing a rounded base',()=>{
+ for(const period of ['2026-01','2026-02','2026-03']){
+  const r=calculate(c('seniority'),{period,profile:{percent:85.81},personal:personal()});
+  assert.equal(r.expected.toFixed(2),'313.16');assert.equal(r.rule.quarterRate,72.99);
+ }
+ const april=calculate(c('seniority'),{period:'2026-04',profile:{percent:85.81},personal:personal()});
+ assert.equal(april.expected.toFixed(2),'382.34');assert.equal(april.rule.quarterRate,74.26);
+ // Do not embed a personal receipt total or its retroactive adjustments in the monthly rule.
+ assert.equal(calculate(c('seniority'),{period:'2026-02',profile:{percent:100},personal:personal()}).expected,364.95);
+ assert.equal(calculate(c('seniority'),{period:'2026-02',profile:{percent:50},personal:personal()}).expected,182.475);
+ assert.match(april.message,/endarreriments.*separat/);
+});
+
+test('one through eight quarters use the common category tariff, not the observed amount of one account',()=>{
+ const expected=['62.63','125.27','187.90','250.53','313.16','375.80','438.43','501.06'];
+ for(let n=1;n<=8;n++){
+  const r=calculate(c('seniority'),{period:'2026-02',profile:{percent:85.81},personal:personal(`${2026-4*n}-01-01`)});
+  assert.equal(r.expected.toFixed(2),expected[n-1]);
+ }
+ // This distinguishes multiplication followed by monetary rounding from rounding each personal quarter first.
+ const r=calculate(c('seniority'),{period:'2026-02',profile:{percent:85.81},personal:personal('2018-01-01')});
+ assert.equal(r.expected.toFixed(2),'125.27');assert.notEqual(r.expected.toFixed(2),(62.63*2).toFixed(2));
+});
