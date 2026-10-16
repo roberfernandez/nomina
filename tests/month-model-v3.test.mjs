@@ -51,10 +51,11 @@ test('V3 extras normalize every original label exactly once',()=>{
 test('V3 unknown seniority, extra night and personal adjustments stay pending',()=>{
  for(const c of [fixedConcepts.find(c=>c.id==='seniority'),extraConcepts.find(c=>c.id==='extra-night')])assert.equal(calculate(c,{profile:{percent:100},period:'2026-06'}).expected,null);
 });
-test('V3 shipped UI is month first and never imports payrolls or original calendars',async()=>{
+test('V3 shipped UI is month first; received premiums are imported separately from labour facts',async()=>{
  const app=await readFile(new URL('../src/app-v3.js',import.meta.url),'utf8');
  assert.match(app,/months-grid/);assert.match(app,/loadPayrollFacts/);assert.match(app,/Endarreriments: Pendent/);assert.match(app,/extraPaymentMonths/);assert.match(app,/extraReferencePeriod/);assert.match(app,/16,33 pagues/);assert.match(app,/Gratificació Vacances · Gener/);
- assert.doesNotMatch(app,/metro-year-|calcDay\(|documentary-examples|type="file"|observed/);
+ assert.doesNotMatch(app,/metro-year-|calcDay\(|documentary-examples|observed/);
+ assert.match(app,/premium-history-file/);assert.match(app,/savePremiumHistory/);
  assert.match(await readFile(new URL('../index.html',import.meta.url),'utf8'),/app-v3\.js/);
 });
 

@@ -1,4 +1,5 @@
 import {calculateEntitlement} from './entitlement-rules.js';
+import {receivedNightAverage} from './vacation-history.js';
 import {additionalRule,personalCalculation} from './resolved-rules-v3.js';
 import {dictionary} from './dictionary-v2.js';
 import {aggregateFacts,accumulatedFacts} from './economics-v2.js';
@@ -88,7 +89,8 @@ function definitiveNightRate(period){
  if(y===2026)return 2.84;
  return null;
 }
-function extraNightAverage(history,period){
+function extraNightAverage(history,period,receivedHistory){
+ if(receivedHistory)return receivedNightAverage(period,receivedHistory);
  const months=Array.from({length:12},(_,i)=>shiftPeriod(period,-(i+1)));
  const rows=[];
  for(const p of months){
@@ -102,7 +104,7 @@ function extraNightAverage(history,period){
  const base=rows.reduce((s,r)=>s+r.amount,0)/12;
  const december=period.endsWith('-12');
  const expected=base*(december?1.3333:1);
- return {expected,label:'Estimació',message:`Mitjana monetària de 12 mesos: ${rows.reduce((s,r)=>s+r.amount,0).toFixed(2)} € / 12${december?' × 1,3333 (factor observat a la paga de desembre; fórmula completa encara pendent de fitxa original)':''}. Es recalculen els mesos amb la tarifa definitiva coneguda i no s’aplica de nou el percentatge contractual. Pot haver-hi diferències de cèntims per regularitzacions o primes de vacances.`};
+ return {expected,label:'Estimació',warning:'Previsió reconstruïda amb hores i tarifes. Encara no és la mitjana dels imports percebuts d’I-102; cal importar l’historial econòmic per conciliar endarreriments.',message:`Base reconstruïda de 12 mesos: ${rows.reduce((s,r)=>s+r.amount,0).toFixed(2)} € / 12${december?' × 1,3333 (factor observat a la paga de desembre; fórmula completa encara pendent de fitxa original)':''}. Es recalculen els mesos amb la tarifa definitiva coneguda i no s’aplica de nou el percentatge contractual. Les diferències de calendari, tarifa o regularitzacions no es pressuposen simples arrodoniments.`};
 }
 export function ruleFor(concept,period){
  if(!isPeriod(period))return null;
@@ -118,7 +120,7 @@ export function ruleFor(concept,period){
  if(id==='extra-night'&&[3,6,9,12].includes(month))return {formula:'night-average-12m',source:'I-102 · mitjana monetària de Nocturnidad Variable dels 12 mesos anteriors; contrast longitudinal de pagues extra 2024–2026',estimated:true,message:'No s’aplica de nou el percentatge contractual. Les revisions conegudes de tarifa es recalculen sobre el període d’origen; poden quedar diferències de cèntims per regularitzacions o primes de vacances.'};
  return null;
 }
-export function calculate(concept,{profile,facts,period,personal=null,history=[],vacationBasis=null}){
+export function calculate(concept,{profile,facts,period,personal=null,history=[],vacationBasis=null,receivedHistory=null}){
  if(['official-holiday','special-day','vacation-premiums','worked-holiday-e'].includes(concept.id)){
   const own=calculateEntitlement(concept.id,{facts,profile,period,history,vacationBasis});
   return {...own,rule:{source:concept.id==='vacation-premiums'?'I-98 · Primes en vacances':concept.id==='worked-holiday-e'?'I-38 · Festivo Trabajado E · variant íntegra estimada':'I-78 · Conveni FMB, arts. 9–12'}};
@@ -126,7 +128,7 @@ export function calculate(concept,{profile,facts,period,personal=null,history=[]
  const rule=ruleFor(concept,period),labour=concept.metric?unitsFor(facts,concept.metric):null;
  const percent=profile?.percent;
  if(rule){const own=personalCalculation(concept.id,rule,{personal,profile,period,history});if(own)return {...own,rule,labour:null,state:own.expected===null?'pending':'component',label:own.expected===null?'Regla coneguda':own.label};
- if(rule.formula==='night-average-12m'){const avg=extraNightAverage(history,period);return {...avg,rule,labour:null,state:avg.expected===null?'pending':'component'};}
+ if(rule.formula==='night-average-12m'){const avg=extraNightAverage(history,period,receivedHistory);return {...avg,rule,labour:null,state:avg.expected===null?'pending':'component'};}
  if(rule.formula==='extra-seniority'){
   const s=personalCalculation('seniority',{formula:'seniority',base:rule.base},{personal,profile,period,history});
   if(!s||s.expected===null)return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:'Cal la data d’incorporació i el percentatge aplicable de la paga.'};

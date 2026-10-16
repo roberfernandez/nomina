@@ -27,6 +27,7 @@ export function parseComputoFacts(raw) {
     }
     const a=d.activity;
     const activity=a?.version===1?{version:1,status:label(a.status),priorOrigin:label(a.priorOrigin),working:typeof a.working==='boolean'?a.working:null,ordinary:typeof a.ordinary==='boolean'?a.ordinary:null,weeklyRest:typeof a.weeklyRest==='boolean'?a.weeklyRest:null,scheduleResolved:a.scheduleResolved===true,vacation:typeof a.vacation==='boolean'?a.vacation:null}:null;
+    if(activity)activity.calendarWorkingDay=typeof a.calendarWorkingDay==='boolean'?a.calendarWorkingDay:null;
     return {date:d.date,activity,schedule:label(d.schedule),profile:profileFromComputo(d.profile||x.profile),metrics};
   });
   return {schema:x.schema,producer:x.producer,version:label(x.version),period:x.period,nightHoursMethod:x.nightHoursMethod==='daily-rounded-2'?x.nightHoursMethod:null,profile:profileFromComputo(x.profile),days};
