@@ -35,37 +35,37 @@ export function unitsFor(facts,metric){
  return {...r,value:r.value===null?null:metric==='nightPayableMinutes'?r.value/60:r.value,unit:metric==='nightPayableMinutes'?'h':r.unit};
 }
 const fixedData=[
- ['salary','Salario Base','Base mensual de categoria; component íntegre abans de descomptes i regularitzacions.'],
- ['seniority','Antigüedad','Quadriennis calculats amb la data d’incorporació, I-05 i percentatge de Cómputo.'],
- ['fixed-premium','Prima Fija','Component proporcional independent de les primes variables.'],
- ['special-fixed','Plus Especial','Complement fix: no és el Plus día Especial.'],
- ['aac','Cto. Atención Cliente','Component mensual AAC íntegre; ajustos per absències o altes parcials pendents.'],
- ['polyvalence','Pr.Polivalencia AAC','Prima AAC independent del complement d’atenció al client.']
+ ['salary','Salario Base','Retribució mensual corresponent a la teva categoria professional i jornada contractual. Les altes, baixes i absències poden modificar l’import del mes.'],
+ ['seniority','Antigüedad','Complement pels anys de servei a l’empresa. Es genera per quadriennis, amb un bienni inicial quan correspon; l’import depèn de l’antiguitat reconeguda i de la jornada.'],
+ ['fixed-premium','Prima Fija','Prima fixa de la retribució mensual, diferenciada dels complements que es generen per hores, dies o serveis concrets. L’import depèn de la jornada i dels ajustos del període.'],
+ ['special-fixed','Plus Especial','Complement fix mensual de la retribució. No exigeix treballar una data especial: és diferent del Plus día Especial, que es genera per serveis en dates i franges concretes.'],
+ ['aac','Cto. Atención Cliente','Complement mensual associat a la categoria d’Agent d’Atenció al Client. L’import depèn de la jornada i pot variar per altes, absències o altres ajustos del mes.'],
+ ['polyvalence','Pr.Polivalencia AAC','Prima mensual de polivalència del personal AAC, diferenciada del complement d’atenció al client. L’import depèn de la jornada i de les condicions aplicables.']
 ];
 export const fixedConcepts=fixedData.map(([id,name,note])=>({id,name,note,kind:'fixed'}));
 export const variableConcepts=[
- {id:'night',name:'Nocturnidad Variable',timing:'same',metric:'nightPayableMinutes',note:'Minuts abonables resolts per Cómputo. Tarifa impresa vigent del mateix mes; import estimat.'},
- {id:'nona',name:'Prima Hora Nona',metric:'horaNonaHours',note:'Unitats resoltes per Cómputo × tarifa. Les diferències històriques de període no modifiquen aquestes unitats.'},
- {id:'conveni',name:'Plus Convenio',timing:'same',metric:'plusConveniDays',note:'Unitats resoltes per Cómputo × 3,81 € el 2026, sense recalcular dies ni aplicar de nou el percentatge.'},
- {id:'official-holiday',name:'Plus Festivo Oficial',metric:null,note:'Festiu laboral, hores efectives, descans propi i compatibilitats. Import proporcional a la jornada.'},
- {id:'worked-holiday-e',name:'P.Festivo Trabajado E',timing:'same',metric:'plusFestiuDays',note:'Variant E del rebut: diumenges elegibles a tarifa íntegra estimada. Es manté separada de Plus Festivo Trabajado proporcional.'},
- {id:'worked-holiday',historical:true,name:'Plus Festivo Trabajado',metric:'workedHolidayDays',note:'Es conserva separat de la variant E. Sense una equivalència acreditada no se sumen ni s’intercanvien.'},
- {id:'special-day',name:'Plus día Especial',metric:null,note:'Servei efectiu ordinari entre les 23 h de la vigília i les 18 h del dia especial. Un import per esdeveniment.'},
- {id:'vacation-bonus',timing:'same',annual:true,name:'Gratificación Vacaciones',metric:null,note:'No és Primas en Vacaciones. No es generalitza l’import d’un rebut individual.'},
- {id:'vacation-premiums',timing:'same',name:'Primas en Vacaciones',metric:null,note:'Requereix mitjana individual acreditada i unitats específiques. No es dedueix dels PDF de l’usuari.'},
- {id:'nursery',timing:'same',name:'Ayuda Guardería',metric:null,note:'Ajuda per fill menor de 3 anys, sense percentatge contractual. Criteri provisional.'},
- {id:'school',timing:'same',name:'Ayuda Escolar',metric:null,note:'Depèn de requisits personals no disponibles a Cómputo. Hi ha regularitzacions documentals; no es pressuposa el dret.'}
+ {id:'night',name:'Nocturnidad Variable',timing:'same',metric:'nightPayableMinutes',note:'Compensa el treball nocturn quan no es percep nocturnitat fixa. La franja de referència és de 22 a 6 h; les hores abonables depenen del torn, la durada nocturna i les condicions aplicables.'},
+ {id:'nona',name:'Prima Hora Nona',metric:'horaNonaHours',note:'Compensa el temps treballat entre la vuitena i la novena hora en les jornades elegibles d’explotació adscrites a còmput. Es liquida per fraccions de 15 minuts, segons les condicions de divendres, dissabte, diumenge o festiu.'},
+ {id:'conveni',name:'Plus Convenio',timing:'same',metric:'plusConveniDays',note:'Complement vinculat a la presència i la puntualitat. Es genera pels dies treballats i també durant descansos compensatoris, recuperacions de jornada (RJ) i vacances. Determinats retards o permisos poden reduir-lo a la meitat o fer perdre el plus del dia.'},
+ {id:'official-holiday',name:'Plus Festivo Oficial',metric:null,note:'Compensa treballar en un festiu laboral oficial. Exigeix un mínim de 4 hores a jornada completa o 2 a temps parcial, exclou el descans setmanal propi i té condicions de compatibilitat amb el Plus día Especial.'},
+ {id:'worked-holiday-e',name:'P.Festivo Trabajado E',timing:'same',metric:'plusFestiuDays',note:'Compensa treballar en diumenge, amb mínims de 4 hores a jornada completa o 2 a temps parcial i exclusió del descans setmanal propi. La variant E del rebut es mostra a tarifa íntegra estimada; es manté diferenciada de la variant proporcional.'},
+ {id:'worked-holiday',historical:true,name:'Plus Festivo Trabajado',metric:'workedHolidayDays',note:'Compensa treballar en diumenge sota les condicions de jornada, durada mínima i descans propi. Aquesta denominació del rebut es conserva separada de P.Festivo Trabajado E, perquè poden tenir un tractament econòmic diferent.'},
+ {id:'special-day',name:'Plus día Especial',metric:null,note:'Compensa el servei efectiu en jornada ordinària dins la franja de 23 h de la vigília a 18 h del dia especial. Inclou les dates reconegudes pel conveni en cada any; les compatibilitats amb altres plusos depenen de quan comença la jornada.'},
+ {id:'vacation-bonus',timing:'same',annual:true,name:'Gratificación Vacaciones',metric:null,note:'Abonament anual de vacances que habitualment es percep al gener, separat de les quatre pagues extraordinàries. L’import personal depèn de la permanència, la jornada i les regularitzacions que corresponguin.'},
+ {id:'vacation-premiums',timing:'same',name:'Primas en Vacaciones',metric:null,note:'Manté durant les vacances la mitjana diària de determinades primes percebudes els 12 mesos anteriors: penositat, festiu oficial, festiu treballat, horari partit, suplències i nocturnitat variable. Es multiplica pels dies de vacances, inclosos els de l’any anterior quan es gaudeixen ara.'},
+ {id:'nursery',timing:'same',name:'Ayuda Guardería',metric:null,note:'Ajuda per fills menors de 3 anys que compleixin els requisits. La referència documental preveu deu mensualitats, de setembre a juny, i un import per fill; els mesos de canvi d’edat requereixen revisar el cas.'},
+ {id:'school',timing:'same',name:'Ayuda Escolar',metric:null,note:'Ajuda per fills que compleixin els requisits d’escolaritat i edat. La referència documental preveu deu mensualitats, de setembre a juny, i un import per fill; el límit d’edat i els mesos de transició s’han de contrastar.'}
 ].map(c=>({...c,kind:'variable'}));
 export const extraConcepts=[
  ['extra-salary','Salario Base'],['extra-seniority','Antigüedad'],['extra-fixed-premium','Prima Fija'],['extra-special-fixed','Plus Especial'],['extra-night','Turno Noche']
-].map(([id,name])=>({id,name:`${name} · Paga Extra`,family:name,kind:'extra',note:name==='Turno Noche'?'Mitjana monetària de la Nocturnidad Variable dels 12 mesos anteriors. No s’hi torna a aplicar el percentatge contractual; les regularitzacions s’imputen al període d’origen.':name==='Antigüedad'?'Març, juny i setembre: antiguitat reconeguda × valor del tram × percentatge aplicable. Desembre aplica el factor 1,3333 acreditat per a l’antiguitat.':'Fórmula documental: base de la paga × percentatge contractual. Component íntegre; ajustos de meritació pendents.'}));
+].map(([id,name])=>({id,name:`${name} · Paga Extra`,family:name,kind:'extra',note:name==='Turno Noche'?'Component de la paga extraordinària que remunera la mitjana de nocturnitat variable dels 12 mesos anteriors. Les regularitzacions poden afectar l’import final.':name==='Antigüedad'?'Part de la paga extraordinària corresponent a l’antiguitat reconeguda. Depèn dels trams abonables, la jornada i les condicions de la paga.':`Part de ${name} inclosa a la paga extraordinària. L’import depèn de la base de la paga, la jornada i la meritació del període.`}));
 export function normalizedDictionary(){
  const groups=extraConcepts.map(c=>({...c,description:c.note,formula:c.id==='extra-night'?'Mitjana monetària dels 12 mesos anteriors de Nocturnidad Variable; desembre aplica el factor específic de la paga.':c.id==='extra-seniority'?'Març, juny i setembre: quadriennis/bienni reconeguts × valor del tram × percentatge aplicable. Desembre: mateixa base d’antiguitat × factor 1,3333.':'Base acreditada × percentatge contractual',aliases:[],kind:'extra'}));
  const normal=[];
  for(const c of dictionary){
   const group=groups.find(g=>c.name.startsWith(g.family+' PE '));
   if(group)group.aliases.push(c.name);
-  else normal.push({...c,id:`dictionary-${c.id}`,aliases:[c.name]});
+  else { const guide=[...fixedConcepts,...variableConcepts].find(item=>item.name===c.name); normal.push({...c,description:guide?.note||c.description,id:`dictionary-${c.id}`,aliases:[c.name]}); }
  }
  return [...normal,...groups];
 }
