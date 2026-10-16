@@ -48,7 +48,7 @@ export const variableConcepts=[
  {id:'nona',name:'Prima Hora Nona',metric:'horaNonaHours',note:'Unitats resoltes per Cómputo × tarifa. Les diferències històriques de període no modifiquen aquestes unitats.'},
  {id:'conveni',name:'Plus Convenio',timing:'same',metric:'plusConveniDays',note:'Unitats resoltes per Cómputo × 3,81 € el 2026, sense recalcular dies ni aplicar de nou el percentatge.'},
  {id:'official-holiday',name:'Plus Festivo Oficial',metric:null,note:'Festiu laboral, hores efectives, descans propi i compatibilitats. Import proporcional a la jornada.'},
- {id:'worked-holiday-e',name:'P.Festivo Trabajado E',timing:'same',metric:'plusFestiuDays',note:'Estimació provisional amb diumenges treballats; gener i març presenten anomalies. E no s’interpreta com a Especial.'},
+ {id:'worked-holiday-e',name:'P.Festivo Trabajado E',timing:'same',metric:'plusFestiuDays',note:'Variant E del rebut: diumenges elegibles a tarifa íntegra estimada. Es manté separada de Plus Festivo Trabajado proporcional.'},
  {id:'worked-holiday',historical:true,name:'Plus Festivo Trabajado',metric:'workedHolidayDays',note:'Es conserva separat de la variant E. Sense una equivalència acreditada no se sumen ni s’intercanvien.'},
  {id:'special-day',name:'Plus día Especial',metric:null,note:'Servei efectiu ordinari entre les 23 h de la vigília i les 18 h del dia especial. Un import per esdeveniment.'},
  {id:'vacation-bonus',timing:'same',annual:true,name:'Gratificación Vacaciones',metric:null,note:'No és Primas en Vacaciones. No es generalitza l’import d’un rebut individual.'},
@@ -118,9 +118,9 @@ export function ruleFor(concept,period){
  return null;
 }
 export function calculate(concept,{profile,facts,period,personal=null,history=[],vacationBasis=null}){
- if(['official-holiday','special-day','vacation-premiums'].includes(concept.id)){
+ if(['official-holiday','special-day','vacation-premiums','worked-holiday-e'].includes(concept.id)){
   const own=calculateEntitlement(concept.id,{facts,profile,period,history,vacationBasis});
-  return {...own,rule:{source:concept.id==='vacation-premiums'?'I-98 · Primes en vacances':'I-78 · Conveni FMB, arts. 9–12'}};
+  return {...own,rule:{source:concept.id==='vacation-premiums'?'I-98 · Primes en vacances':concept.id==='worked-holiday-e'?'I-38 · Festivo Trabajado E · variant íntegra estimada':'I-78 · Conveni FMB, arts. 9–12'}};
  }
  const rule=ruleFor(concept,period),labour=concept.metric?unitsFor(facts,concept.metric):null;
  const percent=profile?.percent;

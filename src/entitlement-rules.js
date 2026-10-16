@@ -52,12 +52,14 @@ export function calculateEntitlement(id,{facts,profile,period,history=[],vacatio
   }
   return result(events.length*202.39,events.length,events,`Art. 9–12 FMB: franja 23 h de la vigília–18 h del dia especial. Cada esdeveniment es compta una vegada, incloses les jornades iniciades la vigília. Període del dia especial ${facts.period}; mes d’abonament pendent de conciliació.`,202.39);
  }
- if(+facts.period.slice(0,4)!==2026)return pending('Falta validar el calendari de festius laborals aplicable a aquest any. No s’utilitza la categoria operativa DIUMENGE com a festiu oficial.');
+ const workedHoliday=id==='worked-holiday-e';
+ if(workedHoliday&&![2024,2025,2026].includes(+facts.period.slice(0,4)))return pending('Falta validar tarifa i vigència de Festivo Trabajado E per a aquest any.');
+ if(!workedHoliday&&+facts.period.slice(0,4)!==2026)return pending('Falta validar el calendari de festius laborals aplicable a aquest any. No s’utilitza la categoria operativa DIUMENGE com a festiu oficial.');
  if(!(profile?.percent>0&&profile.percent<=100))return pending('Falta el percentatge contractual aplicable de Còmput.');
  const all=new Map();for(const h of history){const f=h?.facts||h;if(f?.days)for(const d of f.days)all.set(d.date,d);}for(const d of days)all.set(d.date,d);
  const eligible=[];
  for(const d of days){
-  if(!HOLIDAYS_2026.includes(d.date.slice(5)))continue;
+  if(workedHoliday?new Date(d.date+'T12:00:00Z').getUTCDay()!==0:!HOLIDAYS_2026.includes(d.date.slice(5)))continue;
   if(d.activity.weeklyRest===null)return pending(`Cal confirmar el descans setmanal propi de ${d.date}.`);
   if(d.activity.weeklyRest)continue;
   let minutes=0,excluded=false;
@@ -75,7 +77,8 @@ export function calculateEntitlement(id,{facts,profile,period,history=[],vacatio
   }
   if(minutes>=(profile.percent===100?240:120)&&!excluded)eligible.push(d.date);
  }
- const rate=90*profile.percent/100;
+ const rate=workedHoliday?({2024:45.28,2025:52.64,2026:60})[+facts.period.slice(0,4)]:90*profile.percent/100;
+ if(workedHoliday)return result(eligible.length*rate,eligible.length,eligible,`I-38 i arts. 9–12 FMB. Diumenges, mínims d’hores, descans propi i compatibilitat amb Dia Especial. Variant E estimada a tarifa íntegra, contrastada amb rebuts; no es fusiona amb la variant proporcional. Activitat ${facts.period}; mes d’abonament pendent de conciliació.`,rate);
  return result(eligible.length*rate,eligible.length,eligible,`I-78 i arts. 9–12 FMB. Festius laborals de Barcelona 2026; mínim 4 h a jornada completa o 2 h a parcial; exclòs descans propi i incompatibilitat per inici al dia especial. Tarifa íntegra 90 € × ${fmt(profile.percent)} %. Activitat ${facts.period}; no s’assigna automàticament al rebut del mateix mes.`,rate);
 }
 export const VACATION_BASIS_PREFIX='nomina-vacation-basis-v1-';

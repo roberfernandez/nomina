@@ -35,7 +35,7 @@ test('V3 fixed components support all percentages and tariff periods',()=>{
 test('V3 festive concepts remain distinct and economically pending',()=>{
  for(const id of ['official-holiday','worked-holiday','special-day'])assert.equal(calculate(variableConcepts.find(c=>c.id===id),{facts:facts(),period:'2026-03'}).expected,null);
  assert.equal(unitsFor(facts(),'plusFestiuDays').value,28);
- assert.equal(calculate(variableConcepts.find(c=>c.id==='worked-holiday-e'),{facts:facts(),period:'2026-03'}).labour.value,28);
+ assert.equal(calculate(variableConcepts.find(c=>c.id==='worked-holiday-e'),{facts:facts(),period:'2026-03'}).labour,null);
 });
 test('V3 extras normalize every original label exactly once',()=>{
  const list=normalizedDictionary();assert.equal(list.length,69);

@@ -30,7 +30,7 @@ test('night tariff uses same activity period; hours are not prorated twice',()=>
 });
 test('Convenio and candidate festive E use original units only',()=>{
  assert.equal(calculate(c('conveni'),{period:'2026-04',facts:facts('plusConveniDays',25,'day')}).expected,95.25);
- const r=calculate(c('worked-holiday-e'),{period:'2026-04',facts:facts('plusFestiuDays',2,'day')});assert.equal(r.expected,120);assert.equal(r.label,'Estimació');
+ const r=calculate(c('worked-holiday-e'),{period:'2026-04',facts:facts('plusFestiuDays',2,'day')});assert.equal(r.expected,null);assert.equal(r.label,'Falten dades');
  assert.equal(c('worked-holiday').historical,true);
  assert.equal(calculate(c('conveni'),{period:'2026-04'}).expected,null);
 });

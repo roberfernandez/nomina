@@ -42,3 +42,16 @@ test('parser preserves only validated activity facts and monetary basis is isola
  saveVacationBasis(storage,'a',f.period,{total:2400,calendarDays:200,source:'Font',confirmed:true});assert.equal(readVacationBasis(storage,'b',f.period),null);
  assert.throws(()=>saveVacationBasis(storage,'a',f.period,{total:1,calendarDays:0,source:'Font',confirmed:true}));
 });
+
+test('Festivo Trabajado E has the receipt name, Sunday eligibility and whole rate; special-day incompatibility stays separate',()=>{
+ const f=month('2026-02');work(f,1,'18:46–00:50');work(f,15,'18:46–00:50');const jan=month('2026-01');
+ const r=calc('worked-holiday-e',context(f,[jan]));assert.equal(r.labour.value,2);assert.equal(r.expected,120);
+ f.days[14].activity.weeklyRest=true;assert.equal(calc('worked-holiday-e',context(f,[jan])).expected,60);
+ work(f,1,'10:00–11:59');assert.equal(calc('worked-holiday-e',context(f,[jan])).expected,0);
+});
+
+test('Còmput and Nòmina ship the same entitlement engine',async()=>{
+ const {existsSync,readFileSync}=await import('node:fs');
+ const producer=new URL('../../computo-aac/lib/payroll-entitlements.js',import.meta.url);
+ if(existsSync(producer))assert.equal(readFileSync(producer,'utf8'),readFileSync(new URL('../src/entitlement-rules.js',import.meta.url),'utf8'));
+});
