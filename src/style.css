@@ -16,10 +16,10 @@
 
 .build-info{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin-top:14px;color:#9aafc1;font-size:11px;font-variant-numeric:tabular-nums}.author-credit{font-size:10px;letter-spacing:.2px}
 
-/* Shared return control: arrow + existing TMB Agent icon, no visible label. */
-.tmb-return-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;min-width:92px;height:52px;min-height:52px;padding:5px 10px;box-sizing:border-box;border:2px solid #f1cb49;border-radius:999px;background:#182536;color:#f1cb49;flex:0 0 auto;text-decoration:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+/* Retorn compacte: icona TMB Agent dins un cercle groc. */
+.tmb-return-button{display:inline-flex;align-items:center;justify-content:center;gap:0;width:52px;min-width:52px;height:52px;min-height:52px;padding:5px;box-sizing:border-box;border:2px solid #f1cb49;border-radius:999px;background:#182536;color:#f1cb49;flex:0 0 auto;text-decoration:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .tmb-return-button img{display:block;width:38px;height:38px;border-radius:10px;object-fit:contain;flex:0 0 auto}
-.tmb-return-button svg{display:block;width:22px;height:22px;flex:0 0 auto}
+.tmb-return-button svg{display:none;width:22px;height:22px;flex:0 0 auto}
 .tmb-return-button:hover{background:#26394d;border-color:#ffe177;color:#ffe177}
 .tmb-return-button:active{background:#30465e}
 .tmb-return-button:focus-visible{outline:3px solid #98c5e0;outline-offset:3px}
@@ -27,3 +27,5 @@
 @media(max-width:450px){header{gap:12px}.privacy{font-size:11px;max-width:105px}header .brand{font-size:19px}}
 
 mark{background:#ffe16b;color:#17202b;border-radius:2px;padding:0 .08em}.dictionary-preview{font-size:.88rem;font-weight:400;line-height:1.5;margin:.4em 0 0}
+
+@media(max-width:650px){header{justify-content:flex-start;gap:12px}}
