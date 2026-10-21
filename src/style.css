@@ -29,3 +29,13 @@
 mark{background:#ffe16b;color:#17202b;border-radius:2px;padding:0 .08em}.dictionary-preview{font-size:.88rem;font-weight:400;line-height:1.5;margin:.4em 0 0}
 
 @media(max-width:650px){header{justify-content:flex-start;gap:12px}}
+
+/* Navegació directa entre mesos, també en canviar d'any. */
+.month-navigation{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;align-items:center;gap:12px;width:100%;max-width:540px;margin:12px 0 24px}
+.month-navigation h1{min-width:0;margin:0;text-align:center;font-size:clamp(20px,4vw,32px);line-height:1.2;overflow-wrap:anywhere}
+.month-nav-arrow{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border:1px solid #405064;border-radius:12px;background:#132131;color:#f3d46b;text-decoration:none;touch-action:manipulation}
+.month-nav-arrow svg{flex:none}
+a.month-nav-arrow:hover{background:#23364a;border-color:#f3d46b}
+a.month-nav-arrow:focus-visible{outline:3px solid #98c5e0;outline-offset:3px}
+.month-nav-arrow[aria-disabled="true"]{opacity:.3}
+@media(max-width:450px){.month-navigation{grid-template-columns:44px minmax(0,1fr) 44px;gap:8px}.month-nav-arrow{width:44px;height:44px}}
