@@ -15,7 +15,7 @@ Revisió longitudinal: 107 documents (80 ordinaris i 27 extres), 84 denominacion
 
 ## Períodes
 
-Els variables del treball d’un mes s’associen a la liquidació del següent com a previsió a mes vençut. La imputació exacta dels casos històrics discrepants continua oberta. Els fixos s’avaluen al mes de nòmina. El mes actual només acumula fets fins avui; les dades absents no es converteixen en zero. Un mes finalitzat no implica un export complet.
+Els variables del treball d’un mes s’associen a la liquidació del següent com a previsió a mes vençut. La imputació exacta dels casos històrics discrepants continua oberta. Els fixos s’avaluen al mes de nòmina. Tots els mesos mostren els fets del mes complet rebuts de Còmput, també el mes actual i els futurs, identificats com a previsió; les dades absents no es converteixen en zero. Un mes finalitzat no implica un export complet.
 
 Extres: cinc conceptes estables (Salario Base, Antigüedad, Prima Fija, Plus Especial, Turno Noche), cadascun amb context trimestral. Les 20 etiquetes trimestrals es conserven com a àlies: 69 entrades normalitzades representen les 84 denominacions. Les bases no documentades de desembre 2026 i els ajustos de meritació queden pendents. No es pressuposa que el percentatge actual expliqui una liquidació amb ajustos històrics.
 

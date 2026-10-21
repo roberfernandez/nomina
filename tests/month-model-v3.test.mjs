@@ -9,9 +9,15 @@ test('V3 keeps work and liquidation distinct across years',()=>{
  assert.equal(shiftPeriod('2026-01',-1),'2025-12');assert.equal(shiftPeriod('2026-12',1),'2027-01');
  assert.deepEqual(periodContext('2026-09','2026-10-04'),{work:'2026-09',liquidation:'2026-10',previousWork:'2026-08',state:'Mes finalitzat'});
 });
-test('V3 ongoing month stops today; closed facts are unchanged',()=>{
- const f=facts();assert.equal(unitsFor(visibleFacts(f,'2026-02','2026-02-03'),'horaNonaHours').value,.75);
- assert.equal(unitsFor(visibleFacts(f,'2026-02','2026-03-03'),'horaNonaHours').value,7);
+test('V3 keeps complete Còmput forecasts in current, future and closed months',()=>{
+ const f=facts();
+ for(const today of ['2026-01-03','2026-02-03','2026-03-03']){
+  const visible=visibleFacts(f,'2026-02',today);
+  assert.equal(visible,f);
+  assert.equal(unitsFor(visible,'horaNonaHours').value,7);
+  assert.equal(unitsFor(visible,'nightPayableMinutes').value,28);
+  assert.equal(unitsFor(visible,'plusFestiuDays').value,28);
+ }
  assert.equal(f.days.length,28);assert.throws(()=>visibleFacts(f,'2026-03','2026-03-03'));
 });
 test('V3 absence stays pending, known zero stays zero',()=>{
@@ -55,6 +61,8 @@ test('V3 shipped UI is month first; received premiums are imported separately fr
  const app=await readFile(new URL('../src/app-v3.js',import.meta.url),'utf8');
  assert.match(app,/months-grid/);assert.match(app,/loadPayrollFacts/);assert.match(app,/Endarreriments: Pendent/);assert.match(app,/extraPaymentMonths/);assert.match(app,/extraReferencePeriod/);assert.match(app,/16,33 pagues/);assert.match(app,/Gratificació Vacances · Gener/);
  assert.doesNotMatch(app,/metro-year-|calcDay\(|documentary-examples|observed/);
+ assert.doesNotMatch(app,/Acumulat fins al|No inclou dies futurs/);
+ assert.match(app,/Previsió del mes complet segons Còmput/);
  assert.match(app,/premium-history-file/);assert.match(app,/savePremiumHistory/);
  assert.match(await readFile(new URL('../index.html',import.meta.url),'utf8'),/app-v3\.js/);
 });

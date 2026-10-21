@@ -2,7 +2,7 @@ import {calculateEntitlement} from './entitlement-rules.js';
 import {receivedNightAverage} from './vacation-history.js';
 import {additionalRule,personalCalculation} from './resolved-rules-v3.js';
 import {dictionary} from './dictionary-v2.js';
-import {aggregateFacts,accumulatedFacts} from './economics-v2.js';
+import {aggregateFacts} from './economics-v2.js';
 
 export const monthNames=['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
 export const extraPaymentMonths=[3,6,9,12];
@@ -21,10 +21,11 @@ export function periodContext(period,today){
  if(!isPeriod(period)||!/^\d{4}-\d{2}-\d{2}$/.test(today))throw Error('Data no vàlida');
  return {work:period,liquidation:shiftPeriod(period,1),previousWork:shiftPeriod(period,-1),state:period<today.slice(0,7)?'Mes finalitzat':period===today.slice(0,7)?'Previsió en curs':'Previsió futura'};
 }
-export function visibleFacts(facts,period,today){
+export function visibleFacts(facts,period){
  if(!facts)return null;
  if(facts.period!==period)throw Error('Fets d’un altre període');
- return period===today.slice(0,7)?accumulatedFacts(facts,today):facts;
+ // Keep the complete Còmput forecast for every month, including the current one.
+ return facts;
 }
 export const metrics=[
  ['ordinaryHours','Hores ordinàries','h'],['nightPayableMinutes','Nocturnitat abonable','h'],
