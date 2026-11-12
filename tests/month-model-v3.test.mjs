@@ -43,9 +43,14 @@ test('V3 festive concepts remain distinct and economically pending',()=>{
  assert.equal(unitsFor(facts(),'plusFestiuDays').value,28);
  assert.equal(calculate(variableConcepts.find(c=>c.id==='worked-holiday-e'),{facts:facts(),period:'2026-03'}).labour,null);
 });
-test('V3 extras normalize every original label exactly once',()=>{
- const list=normalizedDictionary();assert.equal(list.length,69);
- assert.deepEqual(list.flatMap(c=>c.aliases).sort(),dictionary.map(c=>c.name).sort());
+test('V3 groups extra labels and hides 34 individual Dto entries',()=>{
+ const dto=name=>/^Dto(?:\\.|\\s|$)/i.test(name);
+ const historical=dictionary.filter(c=>dto(c.name));
+ assert.equal(historical.length,34);
+ const list=normalizedDictionary();assert.equal(list.length,36);
+ assert.equal(list.filter(c=>c.id==='discounts-general').length,1);
+ assert.ok(list.every(c=>!dto(c.name)));
+ assert.deepEqual(list.filter(c=>c.id!=='discounts-general').flatMap(c=>c.aliases).sort(),dictionary.filter(c=>!dto(c.name)).map(c=>c.name).sort());
  assert.equal(extraConcepts.length,5);assert.ok(extraConcepts.every(c=>!/(Marzo|Junio|Septiembre|Diciembre)/.test(c.id+c.name)));
  assert.deepEqual(extraPaymentMonths,[3,6,9,12]);
  assert.equal(extraReferencePeriod('2026-06'),'2026-06');
