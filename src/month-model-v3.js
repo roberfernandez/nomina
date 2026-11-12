@@ -54,6 +54,7 @@ export const variableConcepts=[
  {id:'worked-holiday-e',name:'P.Festivo Trabajado E',timing:'same',metric:'plusFestiuDays',note:'Compensa treballar en diumenge, amb mínims de 4 hores a jornada completa o 2 a temps parcial i exclusió del descans setmanal propi. La variant E del rebut es mostra a tarifa íntegra estimada; es manté diferenciada de la variant proporcional.'},
  {id:'worked-holiday',historical:true,name:'Plus Festivo Trabajado',metric:'workedHolidayDays',note:'Compensa treballar en diumenge sota les condicions de jornada, durada mínima i descans propi. Aquesta denominació del rebut es conserva separada de P.Festivo Trabajado E, perquè poden tenir un tractament econòmic diferent.'},
  {id:'special-day',name:'Plus día Especial',metric:null,note:'Compensa el servei efectiu en jornada ordinària dins la franja de 23 h de la vigília a 18 h del dia especial. Inclou les dates reconegudes pel conveni en cada any; les compatibilitats amb altres plusos depenen de quan comença la jornada.'},
+ {id:'productivity',timing:'same',annualMonth:10,name:'Prima Var. Productividad',metric:null,note:'Prima anual abonada a la nòmina d’octubre (habitualment percebuda al novembre): base de 1.300,00 € el 2026 × percentatge de contractació. En exercicis posteriors, la base es considera previsional fins a confirmar-ne la vigència.'},
  {id:'vacation-bonus',timing:'same',annual:true,name:'Gratificación Vacaciones',metric:null,note:'Abonament anual de vacances que habitualment es percep al gener, separat de les quatre pagues extraordinàries. L’import personal depèn de la permanència, la jornada i les regularitzacions que corresponguin.'},
  {id:'vacation-premiums',timing:'same',name:'Primas en Vacaciones',metric:null,note:'Manté durant les vacances la mitjana diària de determinades primes percebudes els 12 mesos anteriors: penositat, festiu oficial, festiu treballat, horari partit, suplències i nocturnitat variable. Es multiplica pels dies de vacances, inclosos els de l’any anterior quan es gaudeixen ara.'},
  {id:'nursery',timing:'same',name:'Ayuda Guardería',metric:null,note:'Ajuda per fills menors de 3 anys que compleixin els requisits. La referència documental preveu deu mensualitats, de setembre a juny, i un import per fill; els mesos de canvi d’edat requereixen revisar el cas.'},
@@ -120,6 +121,10 @@ function extraNightAverage(history,period,receivedHistory){
 }
 export function ruleFor(concept,period){
  if(!isPeriod(period))return null;
+ if(concept.id==='productivity'){
+  if(period<'2026-10'||!period.endsWith('-10'))return null;
+  return {base:1300,formula:'proportional',source:'Nòmina d’octubre 2026 · base i percentatge contractual documentats',estimated:period.slice(0,4)!=='2026',message:'La prima es paga amb la nòmina d’octubre. La base de 1.300 € es documenta el 2026; en altres anys cal confirmar que no hagi canviat.'};
+ }
  const revised=additionalRule(concept.id,period);if(revised)return revised;
  if(!isPeriod(period)||period.slice(0,4)!=='2026')return null;
  const month=+period.slice(5), id=concept.id;
@@ -154,6 +159,6 @@ export function calculate(concept,{profile,facts,period,personal=null,history=[]
  }
  if(['tariff-only','vacation-average'].includes(rule.formula))return {expected:null,state:'pending',label:'Regla coneguda',rule,labour:null,message:rule.message};}
  if(!rule)return {expected:null,state:'pending',rule:null,labour};
- if(rule.formula==='proportional')return {expected:typeof percent==='number'&&Number.isFinite(percent)&&percent>0&&percent<=100?rule.base*percent/100:null,state:typeof percent==='number'&&percent>0&&percent<=100?'component':'pending',rule,labour:null};
+ if(rule.formula==='proportional')return {expected:typeof percent==='number'&&Number.isFinite(percent)&&percent>0&&percent<=100?rule.base*percent/100:null,state:typeof percent==='number'&&percent>0&&percent<=100?'component':'pending',label:rule.estimated?'Estimació':undefined,message:rule.message,rule,labour:null};
  return {expected:labour?.value===null||labour?.value===undefined?null:labour.value*rule.rate,state:labour?.state||'pending',label:labour?.value===null?'Regla coneguda':rule.estimated||labour?.state!=='complete'?'Estimació':'Calculat',message:rule.message,rule,labour};
 }
