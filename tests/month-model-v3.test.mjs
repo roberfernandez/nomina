@@ -38,6 +38,17 @@ test('V3 fixed components support all percentages and tariff periods',()=>{
  assert.equal(calculate(salary,{profile:{percent:100},period:'2027-01'}).expected,null);
  assert.equal(calculate(salary,{profile:{},period:'2026-04'}).expected,null);
 });
+test('Prima Var. Productividad is forecast only in October using the contractual percentage',()=>{
+ const c=variableConcepts.find(c=>c.id==='productivity');
+ assert.ok(c);assert.equal(c.annualMonth,10);assert.equal(c.timing,'same');
+ assert.equal(ruleFor(c,'2026-09'),null);assert.equal(ruleFor(c,'2026-11'),null);assert.equal(ruleFor(c,'2025-10'),null);
+ assert.equal(ruleFor(c,'2026-10').base,1300);
+ assert.equal(calculate(c,{profile:{percent:85.81},period:'2026-10'}).expected.toFixed(2),'1115.53');
+ assert.equal(calculate(c,{profile:{percent:100},period:'2026-10'}).expected,1300);
+ assert.equal(calculate(c,{profile:{},period:'2026-10'}).expected,null);
+ assert.equal(ruleFor(c,'2027-10').estimated,true);
+ assert.equal(calculate(c,{profile:{percent:85.81},period:'2027-10'}).label,'Estimació');
+});
 test('V3 festive concepts remain distinct and economically pending',()=>{
  for(const id of ['official-holiday','worked-holiday','special-day'])assert.equal(calculate(variableConcepts.find(c=>c.id===id),{facts:facts(),period:'2026-03'}).expected,null);
  assert.equal(unitsFor(facts(),'plusFestiuDays').value,28);
@@ -68,7 +79,7 @@ test('V3 shipped UI is month first; received premiums are imported separately fr
  assert.doesNotMatch(app,/metro-year-|calcDay\(|documentary-examples|observed/);
  assert.doesNotMatch(app,/Acumulat fins al|No inclou dies futurs/);
  assert.match(app,/Previsió del mes complet segons Còmput/);
- assert.match(app,/premium-history-file/);assert.match(app,/savePremiumHistory/);
+ assert.match(app,/premium-history-file/);assert.match(app,/savePremiumHistory/);assert.match(app,/c\.annualMonth/);
  assert.match(await readFile(new URL('../index.html',import.meta.url),'utf8'),/app-v3\.js/);
 });
 
