@@ -49,6 +49,11 @@ test('Prima Var. Productividad is forecast only in October using the contractual
  assert.equal(ruleFor(c,'2027-10').estimated,true);
  assert.equal(calculate(c,{profile:{percent:85.81},period:'2027-10'}).label,'Estimació');
 });
+test('official holiday is assigned to the October payslip, not a pending November variable',()=>{
+ const official=variableConcepts.find(c=>c.id==='official-holiday');
+ assert.equal(official.timing,'same');
+ assert.equal(official.name,'Plus Festivo Oficial');
+});
 test('V3 festive concepts remain distinct and economically pending',()=>{
  for(const id of ['official-holiday','worked-holiday','special-day'])assert.equal(calculate(variableConcepts.find(c=>c.id===id),{facts:facts(),period:'2026-03'}).expected,null);
  assert.equal(unitsFor(facts(),'plusFestiuDays').value,28);
