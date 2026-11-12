@@ -861,11 +861,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "Prima variable presentada con base y cantidad porcentual en tres recibos.",
-    "formula": "Base × porcentaje impreso ÷ 100",
-    "kind": "Proporcional documentado",
+    "description": "Prima anual de productividad que se abona con la nómina de octubre, habitualmente percibida en noviembre. En octubre de 2026 la base del recibo es 1.300,00 € y se aplica el porcentaje de contratación.",
+    "formula": "1.300,00 € × porcentaje de contratación ÷ 100 (base documentada en 2026)",
+    "kind": "Anual · proporcional",
     "metric": null,
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "El mes de abono es octubre. La base de 1.300,00 € está acreditada en el recibo de octubre de 2026; para años posteriores se muestra como previsión hasta confirmar su vigencia. No se aplica fuera de octubre ni se suma como paga extraordinaria."
   },
   {
     "id": "72",
