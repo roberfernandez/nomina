@@ -66,10 +66,21 @@ export function normalizedDictionary(){
  const groups=extraConcepts.map(c=>({...c,description:c.note,formula:c.id==='extra-night'?'Mitjana monetària dels 12 mesos anteriors de Nocturnidad Variable; desembre aplica el factor específic de la paga.':c.id==='extra-seniority'?'Març, juny i setembre: quadriennis/bienni reconeguts × valor del tram × percentatge aplicable. Desembre: mateixa base d’antiguitat × factor 1,3333.':'Base acreditada × percentatge contractual',aliases:[],kind:'extra'}));
  const normal=[];
  for(const c of dictionary){
+  // Keep original payroll labels in source data, not as standalone dictionary fiches.
+  if(/^Dto(?:\.|\s|$)/i.test(c.name))continue;
   const group=groups.find(g=>c.name.startsWith(g.family+' PE '));
   if(group)group.aliases.push(c.name);
   else { const guide=[...fixedConcepts,...variableConcepts].find(item=>item.name===c.name); normal.push({...c,description:guide?.note||c.description,id:`dictionary-${c.id}`,aliases:[c.name]}); }
  }
+ const discounts={
+  id:'discounts-general',name:'Descomptes de nòmina',aliases:['Descomptes de nòmina'],
+  types:['nomina'],kind:'Guia general',metric:null,
+  description:'Els descomptes del rebut no constitueixen un concepte salarial nou per cada complement afectat. Cal distingir les retencions i cotitzacions legals de les minoracions o regularitzacions retributives per absències, incapacitat temporal (IT), vaga o altres incidències.',
+  formula:'No hi ha un percentatge ni un divisor universal: les retencions i cotitzacions depenen de les bases i normes aplicables; els ajustos salarials depenen de la causa, del conveni i de la liquidació documentada.',
+  limits:'Les línies originals de la nòmina es conserven per al contrast històric, amb el seu import i columna de descompte. El nom «Dto» no acredita per si mateix la fórmula, els dies afectats ni la causa. No es calcula una reducció de TMB sense una regla específica contrastada.'
+ };
+ const where=normal.findIndex(c=>c.name==='Diferencias Seg Social');
+ normal.splice(where<0?normal.length:where+1,0,discounts);
  return [...normal,...groups];
 }
 function payableSeniorityForExtra(joined,period){
