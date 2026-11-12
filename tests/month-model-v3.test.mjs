@@ -44,7 +44,7 @@ test('V3 festive concepts remain distinct and economically pending',()=>{
  assert.equal(calculate(variableConcepts.find(c=>c.id==='worked-holiday-e'),{facts:facts(),period:'2026-03'}).labour,null);
 });
 test('V3 groups extra labels and hides 34 individual Dto entries',()=>{
- const dto=name=>/^Dto(?:\\.|\\s|$)/i.test(name);
+ const dto=name=>/^Dto(?:\.|\s|$)/i.test(name);
  const historical=dictionary.filter(c=>dto(c.name));
  assert.equal(historical.length,34);
  const list=normalizedDictionary();assert.equal(list.length,36);
