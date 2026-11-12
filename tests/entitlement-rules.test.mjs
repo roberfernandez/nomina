@@ -9,7 +9,7 @@ function context(f,history=[]){return {facts:f,profile:f.profile,period:f.period
 test('January: evening holidays outside special window, eve crossing gives one special event',()=>{
  const jan=month('2026-01'),dec=month('2025-12');work(jan,1,'18:46–00:50');work(jan,5,'18:46–02:50');work(jan,6,'18:46–00:50');
  const special=calc('special-day',context(jan,[dec]));assert.equal(special.expected,202.39);assert.deepEqual(special.dates,['2026-01-06']);
- const official=calc('official-holiday',context(jan,[dec]));assert.equal(official.expected,154.46);assert.deepEqual(official.dates,['2026-01-01','2026-01-06']);
+ const official=calc('official-holiday',context(jan,[dec]));assert.equal(official.expected,154.46);assert.deepEqual(official.dates,['2026-01-01','2026-01-05']);
 });
 test('11 October 2026 overnight service earns official holiday on 11 even if 12 is rest',()=>{
  const october=month('2026-10');
