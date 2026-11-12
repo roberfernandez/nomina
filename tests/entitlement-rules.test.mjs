@@ -24,6 +24,15 @@ test('11 October 2026 overnight service earns official holiday on 11 even if 12 
  work(october,11,'18:46–01:59');
  assert.equal(calc('official-holiday',context(october)).expected,0);
 });
+test('Reyes worked on both eve and holiday yields one official holiday unit',()=>{
+ const jan=month('2026-01'),dec=month('2025-12');
+ work(jan,5,'18:46–02:50');
+ work(jan,6,'18:46–00:50');
+ const r=calc('official-holiday',context(jan,[dec]));
+ assert.equal(r.expected,77.23);
+ assert.equal(r.labour.value,1);
+ assert.deepEqual(r.dates,['2026-01-05']);
+});
 test('holiday uses the contract percentage, minimum hours and own weekly rest',()=>{
  const f=month('2026-12');work(f,8,'10:00–11:59');assert.equal(calc('official-holiday',context(f)).expected,0);
  work(f,8,'10:00–12:00');assert.equal(calc('official-holiday',context(f)).expected,77.23);

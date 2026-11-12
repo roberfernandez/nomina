@@ -54,6 +54,13 @@ test('official holiday is assigned to the October payslip, not a pending Novembe
  assert.equal(official.timing,'same');
  assert.equal(official.name,'Plus Festivo Oficial');
 });
+test('Diccionari explains one official holiday unit across eve and day',async()=>{
+ const c=normalizedDictionary().find(c=>c.name==='Plus Festivo Oficial');
+ assert.ok(c);assert.match(c.description,/només compta una unitat/);
+ assert.match(c.formula,/Unidades por festivo oficial elegible/);
+ const app=await readFile(new URL('../src/app-v3.js',import.meta.url),'utf8');
+ assert.match(app,/Un mateix festiu oficial: com a màxim una unitat/);
+});
 test('V3 festive concepts remain distinct and economically pending',()=>{
  for(const id of ['official-holiday','worked-holiday','special-day'])assert.equal(calculate(variableConcepts.find(c=>c.id===id),{facts:facts(),period:'2026-03'}).expected,null);
  assert.equal(unitsFor(facts(),'plusFestiuDays').value,28);
