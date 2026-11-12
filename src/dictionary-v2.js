@@ -705,11 +705,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "TMB imprime cantidad, precio e importe cuando dispone de ese desglose. Las unidades personales nunca se obtienen de estos ejemplos.",
-    "formula": "Unidades de Cómputo × tarifa acreditada para el periodo",
-    "kind": "Variable",
+    "description": "Plus por trabajar en un festivo oficial. Si el turno empieza la víspera y continúa después de medianoche, las horas dentro del festivo pueden generar el derecho. En la previsión de Còmput, el mismo festivo cuenta como máximo una vez aunque se trabaje tanto la víspera como el propio festivo. No equivale al plus dominical ni al Plus día Especial.",
+    "formula": "Unidades por festivo oficial elegible (no por turno) × tarifa del periodo. Referencia 2026: 90,00 € × porcentaje de contratación ÷ 100 por unidad. Umbral previsto: 4 h a jornada completa o 2 h a tiempo parcial dentro del festivo.",
+    "kind": "Variable · festivo oficial",
     "metric": null,
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "Criterio de previsión de Còmput, pendiente de contrastar con más desgloses diarios oficiales. Ejemplo contrastado: el turno iniciado el 11/10/2026 y continuado hasta el 12/10 genera una unidad que SAP atribuye al 11/10; la nómina paga 77,23 € con un contrato del 85,81 %. Hay exclusiones por descanso semanal propio y compatibilidades específicas con Plus día Especial. El mes de liquidación de otros casos requiere conciliación."
   },
   {
     "id": "59",
