@@ -11,6 +11,19 @@ test('January: evening holidays outside special window, eve crossing gives one s
  const special=calc('special-day',context(jan,[dec]));assert.equal(special.expected,202.39);assert.deepEqual(special.dates,['2026-01-06']);
  const official=calc('official-holiday',context(jan,[dec]));assert.equal(official.expected,154.46);assert.deepEqual(official.dates,['2026-01-01','2026-01-06']);
 });
+test('11 October 2026 overnight service earns official holiday on 11 even if 12 is rest',()=>{
+ const october=month('2026-10');
+ work(october,11,'18:46–02:50');
+ // October 12 is the official holiday and a weekly rest day in this example.
+ assert.equal(october.days[11].activity.weeklyRest,true);
+ const r=calc('official-holiday',context(october));
+ assert.equal(r.expected,77.23);
+ assert.equal(r.labour.value,1);
+ assert.deepEqual(r.dates,['2026-10-11']);
+ // Fewer than 2 real hours into October 12 do not satisfy the minimum.
+ work(october,11,'18:46–01:59');
+ assert.equal(calc('official-holiday',context(october)).expected,0);
+});
 test('holiday uses the contract percentage, minimum hours and own weekly rest',()=>{
  const f=month('2026-12');work(f,8,'10:00–11:59');assert.equal(calc('official-holiday',context(f)).expected,0);
  work(f,8,'10:00–12:00');assert.equal(calc('official-holiday',context(f)).expected,77.23);
