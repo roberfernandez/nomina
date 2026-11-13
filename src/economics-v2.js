@@ -27,7 +27,7 @@ export function parseComputoFacts(raw) {
     }
     const a=d.activity;
     const activity=a?.version===1?{version:1,status:label(a.status),priorOrigin:label(a.priorOrigin),working:typeof a.working==='boolean'?a.working:null,ordinary:typeof a.ordinary==='boolean'?a.ordinary:null,weeklyRest:typeof a.weeklyRest==='boolean'?a.weeklyRest:null,scheduleResolved:a.scheduleResolved===true,vacation:typeof a.vacation==='boolean'?a.vacation:null}:null;
-    if(activity)activity.calendarWorkingDay=typeof a.calendarWorkingDay==='boolean'?a.calendarWorkingDay:null;
+    if(activity){activity.calendarWorkingDay=typeof a.calendarWorkingDay==='boolean'?a.calendarWorkingDay:null;activity.calendarBaseStatus=['AGCG','DCOM','FEST','REVISAR'].includes(a.calendarBaseStatus)?a.calendarBaseStatus:null;activity.officialHolidayMode=['PROPORTIONAL','E'].includes(a.officialHolidayMode)?a.officialHolidayMode:null;activity.permissionKind=a.permissionKind==='FAMILY_MEDICAL_FULL_DAY'?a.permissionKind:null;}
     return {date:d.date,activity,schedule:label(d.schedule),profile:profileFromComputo(d.profile||x.profile),metrics};
   });
   return {schema:x.schema,producer:x.producer,version:label(x.version),period:x.period,nightHoursMethod:x.nightHoursMethod==='daily-rounded-2'?x.nightHoursMethod:null,profile:profileFromComputo(x.profile),days};
