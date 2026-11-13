@@ -5,11 +5,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "Abono de origen específico. En agosto de 2026 la nota del recibo lo vincula a una prolongación de jornada; no es una regla universal.",
-    "formula": "Pendiente de documentar",
+    "description": "Abonament d’origen específic que requereix llegir la nota del rebut. Una compensació econòmica addicional no implica una segona hora física treballada.",
+    "formula": "Cas contrastat: prolongació física d’una hora més una compensació per escàs preavís, abonades en dues línies de 30,65 €; total 61,30 €.",
     "kind": "Pendiente",
     "metric": null,
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "Les dues compensacions de la prolongació del 19/07/2026 ja consten abonades a l’agost. No hi ha reclamació pendent per aquest cas. El calendari conserva una sola hora física addicional; SAP pot imputar-ne la nocturnitat al dia civil següent. No s’extrapola una tarifa universal d’Abonos Diversos."
   },
   {
     "id": "1",
@@ -609,11 +609,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "TMB imprime cantidad, precio e importe cuando dispone de ese desglose. Las unidades personales nunca se obtienen de estos ejemplos.",
-    "formula": "Unidades de Cómputo × tarifa acreditada para el periodo",
+    "description": "Variant íntegra del Plus Festivo Oficial: la unitat confirmada es retribueix al 100 % de la tarifa. No s’hi torna a aplicar el percentatge contractual. És diferent de P.Festivo Trabajado E.",
+    "formula": "Unitats confirmades × 79,86 € (2024), 84,93 € (2025) o 90,00 € (2026). Exemple contrastat: dues unitats de 2026 = 180,00 €.",
     "kind": "Variable",
     "metric": null,
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "La modalitat E s’acredita amb la valoració o la nòmina; no es dedueix només del dia de la setmana ni de la durada del servei. Còmput exporta la modalitat confirmada de cada data; Nòmina reutilitza el mateix motor. Sense confirmació, el dret o la classificació queden pendents."
   },
   {
     "id": "51",
@@ -621,11 +621,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "TMB imprime cantidad, precio e importe cuando dispone de ese desglose. Las unidades personales nunca se obtienen de estos ejemplos.",
-    "formula": "Unidades de Cómputo × tarifa acreditada para el periodo",
+    "description": "Plus per diumenge treballat sota les condicions específiques de servei, hores mínimes, descans setmanal propi i compatibilitat per esdeveniment. No equival a comptar diumenges del calendari i no és el Festivo Oficial.",
+    "formula": "Unitats elegibles resoltes pel motor compartit Còmput–Nòmina × tarifa íntegra E: 45,28 € (2024), 52,64 € (2025), 60,00 € (2026).",
     "kind": "Variable",
     "metric": "workedHolidayDays",
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "Manté els mínims existents de quatre hores a jornada completa o dues a parcial i comprova els torns que travessen mitjanit. La tarifa E observada no es torna a prorratejar. La variant proporcional es conserva separada. La coincidència amb Dia Especial s’avalua per la mateixa situació retributiva, no per tot el mes."
   },
   {
     "id": "52",
@@ -633,11 +633,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "TMB imprime cantidad, precio e importe cuando dispone de ese desglose. Las unidades personales nunca se obtienen de estos ejemplos.",
-    "formula": "Unidades de Cómputo × tarifa acreditada para el periodo",
+    "description": "Complement de presència i puntualitat amb dies elegibles segons la situació. Es mantenen les regles existents per descansos DCOM, RJ, vacances i altres supòsits.",
+    "formula": "Unitats elegibles exportades per Còmput × tarifa aplicable del període. El permís de jornada completa per acompanyament mèdic familiar no genera la unitat del dia.",
     "kind": "Variable",
     "metric": "plusConveniDays",
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "Aquesta exclusió és específica d’aquella modalitat de jornada completa. No s’aplica automàticament a tots els permisos. Març 2026: el cas contrastat passa de 28 a 27 unitats quan s’identifica el permís corresponent."
   },
   {
     "id": "53",
@@ -705,11 +705,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "Plus por trabajar en un festivo oficial. Si el turno empieza la víspera y continúa después de medianoche, las horas dentro del festivo pueden generar el derecho. En la previsión de Còmput, el mismo festivo cuenta como máximo una vez aunque se trabaje tanto la víspera como el propio festivo. No equivale al plus dominical ni al Plus día Especial.",
-    "formula": "Unidades por festivo oficial elegible (no por turno) × tarifa del periodo. Referencia 2026: 90,00 € × porcentaje de contratación ÷ 100 por unidad. Umbral previsto: 4 h a jornada completa o 2 h a tiempo parcial dentro del festivo.",
+    "description": "Plus per treballar en un festiu laboral oficial, amb les condicions de durada, descans i compatibilitat aplicables. És la variant proporcional al percentatge contractual vigent en la data del servei. No és el plus de diumenge ni el Dia Especial. En la previsió no confirmada d’un mateix festiu, Còmput només compta una unitat encara que el torn de la vigília i el del festiu hi aportin hores; una valoració confirmada de cada servei preval sobre aquesta previsió.",
+    "formula": "Unitats elegibles × tarifa íntegra de l’any × percentatge de jornada ÷ 100. S’arrodoneix la tarifa individual a cèntims abans de multiplicar les unitats. Referències 2024: 79,86 €; 2025: 84,93 €; 2026: 90,00 €. Amb 85,81 %: 68,53 €, 72,88 € i 77,23 € respectivament.",
     "kind": "Variable · festivo oficial",
     "metric": null,
-    "limits": "Criterio de previsión de Còmput, pendiente de contrastar con más desgloses diarios oficiales. Ejemplo contrastado: el turno iniciado el 11/10/2026 y continuado hasta el 12/10 genera una unidad que SAP atribuye al 11/10; la nómina paga 77,23 € con un contrato del 85,81 %. Hay exclusiones por descanso semanal propio y compatibilidades específicas con Plus día Especial. El mes de liquidación de otros casos requiere conciliación."
+    "limits": "La data de valoració pot ser la d’inici d’un torn nocturn que entra al festiu. Les modalitats confirmades amb SAP o rebut es mantenen separades de la previsió automàtica. No s’inventa un llindar de cinc hores per distingir aquesta variant de la E. Els casos nous no verificats queden pendents."
   },
   {
     "id": "59",
@@ -729,11 +729,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "TMB imprime cantidad, precio e importe cuando dispone de ese desglose. Las unidades personales nunca se obtienen de estos ejemplos.",
-    "formula": "Unidades de Cómputo × tarifa acreditada para el periodo",
+    "description": "Plus per servei efectiu ordinari dins la franja del Dia Especial: de les 23 h de la vigília a les 18 h del dia reconegut. Es tracta com un esdeveniment, amb les compatibilitats aplicables a cada situació.",
+    "formula": "Esdeveniments elegibles × tarifa acreditada. Referència 2026: 202,39 € per unitat.",
     "kind": "Variable",
     "metric": "specialRetributiveDays",
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "Dates i vigència segons el conveni incorporat al motor. Les primes de la Mercè i el Dia Especial poden aparèixer en un mateix mes si corresponen a situacions diferents. La incompatibilitat només es comprova per la mateixa situació; no s’exclou automàticament tot setembre. Exemple contrastat setembre 2026: Mercè, 2 unitats i 323,30 €; Dia Especial, 1 unitat i 202,39 €."
   },
   {
     "id": "61",
@@ -837,11 +837,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "TMB imprime cantidad, precio e importe cuando dispone de ese desglose. Las unidades personales nunca se obtienen de estos ejemplos.",
-    "formula": "Unidades de Cómputo × tarifa acreditada para el periodo",
+    "description": "Prima associada al tram de jornada que compleix les condicions retributives de la Hora Nona. Es conserva la regla de càlcul vigent de Còmput mentre es contrasten les diferències amb SAP.",
+    "formula": "Unitats elegibles resoltes × tarifa aplicable, amb el tractament de fraccions acreditat.",
     "kind": "Variable",
     "metric": "horaNonaHours",
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "La hipòtesi que només es genera en determinats dies de divendres a diumenge no és una regla nova confirmada. Les diferències continuen visibles i pendents d’investigació; no s’eliminen ajustant la regla als rebuts."
   },
   {
     "id": "70",
@@ -849,11 +849,11 @@ export const dictionary = [
     "types": [
       "nomina"
     ],
-    "description": "Importe identificado en los recibos TMB. El origen exacto y la fórmula requieren documentación adicional.",
-    "formula": "Pendiente de documentar",
+    "description": "Prima específica pels serveis de la Mercè que compleixen les seves condicions. La coincidència mensual amb Plus día Especial no prova un pagament incompatible: poden remunerar serveis o situacions diferents.",
+    "formula": "Unitats i tarifa acreditades per la regulació i el rebut aplicables. Exemple observat setembre 2026: 2 unitats, import 323,30 €. No es converteix aquest exemple en tarifa universal.",
     "kind": "Pendiente",
     "metric": null,
-    "limits": "Ejemplos documentales individuales, no datos actuales del usuario. La aparición en un recibo normal puede ser una retroactividad de una paga extra. No acredita una tarifa universal."
+    "limits": "La incompatibilitat amb Dia Especial s’avalua sobre la mateixa situació retributiva. S’han de conservar les acumulacions permeses i les dates d’origen. Si falta el detall del servei, queda pendent de conciliació."
   },
   {
     "id": "71",

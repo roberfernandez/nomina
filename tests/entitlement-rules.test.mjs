@@ -77,3 +77,13 @@ test('Còmput and Nòmina ship the same entitlement engine',async()=>{
  const producer=new URL('../../computo-aac/lib/payroll-entitlements.js',import.meta.url);
  if(existsSync(producer))assert.equal(readFileSync(producer,'utf8'),readFileSync(new URL('../src/entitlement-rules.js',import.meta.url),'utf8'));
 });
+
+test('confirmed official E and proportional units remain separate with per-date percentages',()=>{
+ const f=month('2026-09');for(const day of [11,23]){work(f,day,'18:46–00:50');f.days[day-1].activity.officialHolidayMode='E';}
+ const e=calc('official-holiday-e',context(f));assert.equal(e.expected,180);assert.equal(e.labour.value,2);assert.equal(calc('official-holiday',context(f)).expected,0);
+ f.days[10].activity.officialHolidayMode='PROPORTIONAL';f.days[10].profile={percent:50};assert.equal(calc('official-holiday',context(f)).expected,45);assert.equal(calc('official-holiday-e',context(f)).expected,90);
+});
+test('confirmed Jan 5 and Jan 6 service valuations override the unconfirmed event preview',()=>{
+ const f=month('2026-01'),dec=month('2025-12');for(const n of [1,5,6]){work(f,n,n===5?'18:46–02:50':'18:46–00:50');f.days[n-1].activity.officialHolidayMode='PROPORTIONAL';}
+ assert.equal(calc('official-holiday',context(f,[dec])).expected,231.69);
+});

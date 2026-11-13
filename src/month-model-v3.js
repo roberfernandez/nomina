@@ -48,10 +48,11 @@ const fixedData=[
 export const fixedConcepts=fixedData.map(([id,name,note])=>({id,name,note,kind:'fixed'}));
 export const variableConcepts=[
  {id:'night',name:'Nocturnidad Variable',timing:'same',metric:'nightPayableMinutes',note:'Compensa el treball nocturn quan no es percep nocturnitat fixa. La franja de referència és de 22 a 6 h; les hores abonables depenen del torn, la durada nocturna i les condicions aplicables.'},
- {id:'nona',name:'Prima Hora Nona',metric:'horaNonaHours',note:'Compensa el temps treballat entre la vuitena i la novena hora en les jornades elegibles d’explotació adscrites a còmput. Es liquida per fraccions de 15 minuts, segons les condicions de divendres, dissabte, diumenge o festiu.'},
+ {id:'nona',name:'Prima Hora Nona',metric:'horaNonaHours',note:'Unitats de Hora Nona amb la regla vigent de Còmput. La restricció hipotètica a divendres–diumenge segueix pendent de contrast; les diferències no s’oculten.'},
  {id:'conveni',name:'Plus Convenio',timing:'same',metric:'plusConveniDays',note:'Complement vinculat a la presència i la puntualitat. Es genera pels dies treballats i també durant descansos compensatoris, recuperacions de jornada (RJ) i vacances. Determinats retards o permisos poden reduir-lo a la meitat o fer perdre el plus del dia.'},
  {id:'official-holiday',name:'Plus Festivo Oficial',timing:'same',metric:null,note:'Compensa treballar en un festiu laboral oficial. Exigeix un mínim de 4 hores a jornada completa o 2 a temps parcial, exclou el descans setmanal propi de la jornada que genera el plus i té condicions de compatibilitat amb el Plus día Especial. Un torn nocturn que entra al festiu pot atribuir-se a la data d’inici del servei, com el 11/10/2026. Si es treballa també el dia festiu, Còmput suma el temps elegible per aquell mateix festiu i només compta una unitat, no una per torn. Aquesta deduplicació és el criteri de previsió de l’app i està pendent de contrast amb més registres diaris de SAP.'},
- {id:'worked-holiday-e',name:'P.Festivo Trabajado E',timing:'same',metric:'plusFestiuDays',note:'Compensa treballar en diumenge, amb mínims de 4 hores a jornada completa o 2 a temps parcial i exclusió del descans setmanal propi. La variant E del rebut es mostra a tarifa íntegra estimada; es manté diferenciada de la variant proporcional.'},
+ {id:'official-holiday-e',name:'P.Festivo Oficial E',timing:'same',metric:null,note:'Variant íntegra del festiu oficial, confirmada amb SAP o nòmina: 79,86 € el 2024, 84,93 € el 2025 i 90,00 € el 2026 per unitat, sense percentatge contractual. No és P.Festivo Trabajado E i no es dedueix d’un llindar de cinc hores.'},
+ {id:'worked-holiday-e',name:'P.Festivo Trabajado E',timing:'same',metric:null,note:'Compensa treballar en diumenge, amb mínims de 4 hores a jornada completa o 2 a temps parcial i exclusió del descans setmanal propi. La variant E del rebut es mostra a tarifa íntegra estimada; es manté diferenciada de la variant proporcional.'},
  {id:'worked-holiday',historical:true,name:'Plus Festivo Trabajado',metric:'workedHolidayDays',note:'Compensa treballar en diumenge sota les condicions de jornada, durada mínima i descans propi. Aquesta denominació del rebut es conserva separada de P.Festivo Trabajado E, perquè poden tenir un tractament econòmic diferent.'},
  {id:'special-day',name:'Plus día Especial',metric:null,note:'Compensa el servei efectiu en jornada ordinària dins la franja de 23 h de la vigília a 18 h del dia especial. Inclou les dates reconegudes pel conveni en cada any; les compatibilitats amb altres plusos depenen de quan comença la jornada.'},
  {id:'productivity',timing:'same',annualMonth:10,name:'Prima Var. Productividad',metric:null,note:'Prima anual abonada a la nòmina d’octubre (habitualment percebuda al novembre): base de 1.300,00 € el 2026 × percentatge de contractació. En exercicis posteriors, la base es considera previsional fins a confirmar-ne la vigència.'},
@@ -71,7 +72,7 @@ export function normalizedDictionary(){
   if(/^Dto(?:\.|\s|$)/i.test(c.name))continue;
   const group=groups.find(g=>c.name.startsWith(g.family+' PE '));
   if(group)group.aliases.push(c.name);
-  else { const guide=[...fixedConcepts,...variableConcepts].find(item=>item.name===c.name); normal.push({...c,description:guide?.note||c.description,id:`dictionary-${c.id}`,aliases:[c.name]}); }
+  else { const guide=[...fixedConcepts,...variableConcepts].find(item=>item.name===c.name); normal.push({...c,description:["Plus Festivo Oficial","P.Festivo Oficial E","P.Festivo Trabajado E","Plus día Especial","Prima Noche de la Mercé","Abonos Diversos","Plus Convenio","Prima Hora Nona"].includes(c.name)?c.description:guide?.note||c.description,id:`dictionary-${c.id}`,aliases:[c.name]}); }
  }
  const discounts={
   id:'discounts-general',name:'Descomptes de nòmina',aliases:['Descomptes de nòmina'],
@@ -138,7 +139,7 @@ export function ruleFor(concept,period){
  return null;
 }
 export function calculate(concept,{profile,facts,period,personal=null,history=[],vacationBasis=null,receivedHistory=null}){
- if(['official-holiday','special-day','vacation-premiums','worked-holiday-e'].includes(concept.id)){
+ if(['official-holiday','official-holiday-e','special-day','vacation-premiums','worked-holiday-e'].includes(concept.id)){
   const own=calculateEntitlement(concept.id,{facts,profile,period,history,vacationBasis});
   return {...own,rule:{source:concept.id==='vacation-premiums'?'I-98 · Primes en vacances':concept.id==='worked-holiday-e'?'I-38 · Festivo Trabajado E · variant íntegra estimada':'I-78 · Conveni FMB, arts. 9–12'}};
  }
